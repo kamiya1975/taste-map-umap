@@ -7,4 +7,3 @@ matplotlib
 seaborn
 scipy
 plotly 
-font-ttf-noto-cjk
