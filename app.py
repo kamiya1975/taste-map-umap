@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from sklearn.impute import KNNImputer
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 import umap
 from scipy.spatial.distance import cdist
 import plotly.graph_objects as go
@@ -11,7 +12,7 @@ import plotly.graph_objects as go
 # ✅ データ読み込み
 df = pd.read_csv("Merged_TasteDataDB15.csv")
 
-# ✅ 官能軸セット（等高線用）
+# ✅ 官能軸セット
 feature_components = {
     "甘味": ["ブドウ糖", "果糖"],
     "酸味": ["リンゴ酸", "酒石酸"],
@@ -41,12 +42,18 @@ imputer = KNNImputer(n_neighbors=5)
 X_imputed = imputer.fit_transform(X)
 X_scaled = StandardScaler().fit_transform(X_imputed)
 
+# ✅ PCA
+pca = PCA(n_components=10)
+X_pca = pca.fit_transform(X_scaled)
+
 # ✅ UMAP
 reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, random_state=42)
-embedding = reducer.fit_transform(X_scaled)
+embedding = reducer.fit_transform(X_pca)
 
 # ✅ UMAP DataFrame
 umap_df = pd.DataFrame(embedding, columns=["UMAP1", "UMAP2"])
+umap_df["PC1"] = X_pca[:, 0]
+umap_df["PC2"] = X_pca[:, 1]
 umap_df["JAN"] = df["JAN"].astype(str)
 umap_df["Type"] = df["Type"] if "Type" in df.columns else "Unknown"
 umap_df["商品名"] = df["商品名"] if "商品名" in df.columns else umap_df["JAN"]
@@ -64,30 +71,42 @@ umap_df["Z"] = z_combined
 
 # ✅ 基準ワイン (blendF)
 blend_row = umap_df[umap_df["JAN"] == "blendF"].iloc[0]
-x_center = blend_row["UMAP1"]
-y_center = blend_row["UMAP2"]
+pc1_center = blend_row["PC1"]
+pc2_center = blend_row["PC2"]
 selected_name = blend_row["商品名"]
 
-# ✅ スライダー（0-100 → 50がblendF位置）
+# ✅ スライダー（PC1, PC2）
 st.markdown("#### 🔍 基準ワインの印象調整（スライダー）")
-slider_x = st.slider("← 軽やか / 濃厚 →", 0, 100, 50)
-slider_y = st.slider("← 甘さ控えめ / 甘さ強め →", 0, 100, 50)
+slider_pc1 = st.slider("← PC1（軽やか） / PC1（濃厚） →", 0, 100, 50)
+slider_pc2 = st.slider("← PC2（甘さ控えめ） / PC2（甘さ強め） →", 0, 100, 50)
 
-# ✅ スライダー補正 → 座標変換
-step_umap1 = 0.15  # 適宜調整
-step_umap2 = 0.15  # 適宜調整
+# ✅ スライダー補正 → PCA空間座標に変換
+step_pc1 = 0.3  # 調整可
+step_pc2 = 0.3
 
-target_x = x_center + (slider_x - 50) * step_umap1
-target_y = y_center + (slider_y - 50) * step_umap2
+target_pc1 = pc1_center + (slider_pc1 - 50) * step_pc1
+target_pc2 = pc2_center + (slider_pc2 - 50) * step_pc2
 
-# ✅ 一致度計算（距離）
+# ✅ PCA → UMAP に変換
+target_pca = np.zeros((1, 10))
+target_pca[0, 0] = target_pc1
+target_pca[0, 1] = target_pc2
+# 他は中心と同じ（保守的）
+target_pca[0, 2:] = X_pca[umap_df["JAN"] == "blendF"][0, 2:]
+
+# ✅ UMAP transform（学習済みreducerで変換）
+target_umap = reducer.transform(target_pca)
+target_x = target_umap[0, 0]
+target_y = target_umap[0, 1]
+
+# ✅ 一致度計算
 target_xy = np.array([[target_x, target_y]])
 all_xy = umap_df[["UMAP1", "UMAP2"]].values
 distances = cdist(target_xy, all_xy).flatten()
 umap_df["distance"] = distances
 df_sorted = umap_df.sort_values("distance").head(10)
 
-# ✅ Plotly図（Contour + Scatter）
+# ✅ Plotly図
 fig = go.Figure()
 
 # --- カラーマップ ---
@@ -124,7 +143,7 @@ fig.add_trace(go.Scatter(
     name="ワイン"
 ))
 
-# --- ピン（スライダー位置） ---
+# --- ピン（スライダー → PCA → UMAP変換位置） ---
 fig.add_trace(go.Scatter(
     x=[target_x],
     y=[target_y],
@@ -145,10 +164,6 @@ fig.update_layout(
     height=600,
     autosize=True
 )
-
-# 軸目盛り消す場合 → 以下をコメントアウト
-# fig.update_xaxes(visible=False)
-# fig.update_yaxes(visible=False)
 
 # ✅ 表示
 st.plotly_chart(fig, use_container_width=True)
