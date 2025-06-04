@@ -61,23 +61,44 @@ umap_df["JAN"] = df["JAN"].astype(str)
 umap_df["Type"] = df["Type"] if "Type" in df.columns else "Unknown"
 umap_df["商品名"] = df["商品名"] if "商品名" in df.columns else umap_df["JAN"]
 
-# ✅ Streamlit App
-st.set_page_config(page_title="PCA UMAP TasteMAP 統合", layout="wide")
+# ✅ Streamlit UI
+st.set_page_config(page_title="TasteMAP UMAP", layout="wide")
+
 st.title("TasteMAP UMAP + 等高線 + 一致度")
 
-# ✅ 等高線軸プルダウン
+# ✅ 等高線 軸 選択
 selected_feature = st.selectbox("等高線軸を選択", list(feature_components.keys()))
 
-# ✅ 商品名選択プルダウン（JANではなく商品名に変更！）
-selected_product = st.selectbox("🔍 近いワインを出す基準ワインを選択", umap_df["商品名"].unique())
-
-# ✅ 合成Z軸（生値の和）
+# ✅ Z軸 合成
 components = feature_components[selected_feature]
 z_combined = df[components].sum(axis=1).values
 umap_df["Z"] = z_combined
 
-# ✅ plotly グラフ作成
-fig = px.scatter(
+# ✅ ワイン選択
+product_options = umap_df["商品名"].tolist()
+selected_product = st.selectbox("🔍 近いワインを出す基準ワインを選択", product_options)
+
+# ✅ 選択位置
+selected_row = umap_df[umap_df["商品名"] == selected_product].iloc[0]
+target_xyz = np.array([[selected_row["UMAP1"], selected_row["UMAP2"], selected_row["Z"]]])
+all_xyz = umap_df[["UMAP1", "UMAP2", "Z"]].values
+distances = cdist(target_xyz, all_xyz).flatten()
+umap_df["distance"] = distances
+df_top10 = umap_df.sort_values("distance").head(10)
+
+# ✅ plotly 等高線 + scatter overlay
+fig = px.density_contour(
+    umap_df,
+    x="UMAP1", y="UMAP2",
+    z="Z",
+    color_continuous_scale="YlOrBr",
+    contours_coloring="fill",
+    nbinsx=50,
+    nbinsy=50
+)
+
+# ✅ scatter trace 追加
+scatter_fig = px.scatter(
     umap_df,
     x="UMAP1", y="UMAP2",
     color="Type",
@@ -87,8 +108,10 @@ fig = px.scatter(
     color_discrete_sequence=px.colors.qualitative.Set2
 )
 
-# ✅ 基準商品に赤いピンを立てる
-selected_row = umap_df[umap_df["商品名"] == selected_product].iloc[0]
+for trace in scatter_fig.data:
+    fig.add_trace(trace)
+
+# ✅ 赤ピン
 fig.add_scatter(
     x=[selected_row["UMAP1"]],
     y=[selected_row["UMAP2"]],
@@ -99,17 +122,10 @@ fig.add_scatter(
     name="Selected"
 )
 
-# ✅ グラフ表示
+# ✅ 表示
 st.plotly_chart(fig, use_container_width=True)
 
-# ✅ 近傍TOP10計算
-target_xyz = np.array([[selected_row["UMAP1"], selected_row["UMAP2"], selected_row["Z"]]])
-all_xyz = umap_df[["UMAP1", "UMAP2", "Z"]].values
-distances = cdist(target_xyz, all_xyz).flatten()
-umap_df["distance"] = distances
+# ✅ TOP10 出力
+st.markdown("📋 **近いワイン TOP10**")
+st.dataframe(df_top10[["Type", "商品名", "distance"]].reset_index(drop=True))
 
-df_sorted = umap_df.sort_values("distance").head(10)
-
-# ✅ TOP10 表示
-st.subheader("📋 近いワイン TOP10")
-st.dataframe(df_sorted[["Type", "商品名", "distance"]], use_container_width=True)
