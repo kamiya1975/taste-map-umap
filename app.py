@@ -85,6 +85,14 @@ df_sorted = umap_df.sort_values("distance").head(10)
 # ✅ Plotly図：Contour + Scatter（調整版）
 fig = go.Figure()
 
+# --- カラーマップ定義 ---
+color_map = {
+    "White": "blue",
+    "Red": "red",
+    "Spa": "violet",
+    "Rose": "pink"
+}
+
 # 等高線（滑らか、透明度低め、背景、バーなし）
 fig.add_trace(go.Contour(
     x=umap_df["UMAP1"],
