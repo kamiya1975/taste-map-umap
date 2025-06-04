@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-import matplotlib.font_manager as fm
 import streamlit as st
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -26,13 +25,6 @@ try:
 except Exception as e:
     st.error(f"❌ データ読み込みエラー: {e}")
     st.stop()
-
-# ✅ 対象のJANコード
-target_jans = [
-    "4935919319140", "4935919080316", "4935919058186", "850832004260", "4935919071604",
-    "4935919193559", "4935919197175", "4935919052504", "4935919080378", "blendF",
-    "4935919213578", "4935919961554", "4935919194624", "4935919080965",
-]
 
 # ✅ 使用する成分
 features = [
@@ -87,6 +79,13 @@ slider_pc2 = st.slider("← PC2（甘さ控えめ） / PC2（甘さ強め） →
 target_x = (slider_pc1 - 50) / 50 * 3
 target_y = (slider_pc2 - 50) / 50 * 3
 
+# ✅ 一致度計算
+target_xy = np.array([[target_x, target_y]])
+all_xy = df_clean[["BodyAxis", "SweetAxis"]].values
+distances = cdist(target_xy, all_xy).flatten()
+df_clean["distance"] = distances
+df_sorted = df_clean.sort_values("distance").head(10)
+
 # ✅ 散布図
 fig, ax = plt.subplots(figsize=(16, 12))
 
@@ -101,18 +100,17 @@ for wine_type in df_clean["Type"].unique():
         color=color_map.get(wine_type, "gray")
     )
 
-# JANコードハイライト
-for i, row in df_clean.iterrows():
-    if str(row["JAN"]) in target_jans:
-        ax.scatter(
-            row["BodyAxis"], row["SweetAxis"],
-            color='black', edgecolor='white', s=100, marker='o'
-        )
-        ax.text(
-            row["BodyAxis"] + 0.1, row["SweetAxis"],
-            str(row["商品名"]),
-            fontsize=8, color='black'
-        )
+# ✅ 一致度TOP10 ハイライト（← ここが今回追加）
+for i, row in df_sorted.iterrows():
+    ax.scatter(
+        row["BodyAxis"], row["SweetAxis"],
+        color='black', edgecolor='white', s=120, marker='o'
+    )
+    ax.text(
+        row["BodyAxis"] + 0.1, row["SweetAxis"],
+        str(row["商品名"]),
+        fontsize=9, color='black'
+    )
 
 # スライダー位置（ターゲット）マーク
 ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='基準スライダー位置')
@@ -126,13 +124,6 @@ ax.grid(True)
 
 # グラフ表示
 st.pyplot(fig)
-
-# ✅ 一致度計算
-target_xy = np.array([[target_x, target_y]])
-all_xy = df_clean[["BodyAxis", "SweetAxis"]].values
-distances = cdist(target_xy, all_xy).flatten()
-df_clean["distance"] = distances
-df_sorted = df_clean.sort_values("distance").head(10)
 
 # ✅ 一致度TOP10 表示
 st.subheader("📋 近いワイン TOP10")
