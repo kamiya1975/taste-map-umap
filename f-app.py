@@ -12,34 +12,19 @@ from scipy.spatial.distance import cdist
 # ✅ rcParams を初期化
 matplotlib.rcdefaults()
 
-# ✅ フォント設定（日本語 fallback 対応版）
-font_candidates = ['Noto Sans CJK JP', 'Noto Sans JP', 'IPAexGothic', 'IPA Gothic', 'Arial', 'DejaVu Sans']
-font_prop = None
-
-for font_name in font_candidates:
-    try:
-        font_prop = fm.FontProperties(family=font_name)
-        break
-    except:
-        continue
-
-if font_prop:
-    st.write(f"✅ 使用フォント → {font_prop.get_name()}")
-else:
-    st.write("⚠️ 日本語フォントが見つかりません。デフォルトを使用します。")
-    font_prop = fm.FontProperties()
+# ✅ フォント fallback をグローバル設定（GitHubでも安全）
+matplotlib.rc('font', family='Noto Sans CJK JP')
 
 # ✅ Streamlit タイトル
 st.title("🎈 TasteMAP：PCA合成軸マップ with スライダー一致度")
 
-# ✅ ファイルアップローダー
-uploaded_file = st.file_uploader("Merged_TasteDataDB15.csv", type="csv")
-
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
-    st.success("✅ データ読み込み成功！")
-else:
-    st.warning("Merged_TasteDataDB15.csv")
+# ✅ データ読み込み（GitHubリポジトリ内の固定ファイルパス）
+try:
+    df = pd.read_csv("Merged_TasteDataDB15.csv")
+    st.success("✅ データ読み込み成功！（GitHub内）")
+    st.write(f"📄 使用ファイル名: Merged_TasteDataDB15.csv")
+except Exception as e:
+    st.error(f"❌ データ読み込みエラー: {e}")
     st.stop()
 
 # ✅ 対象のJANコード
@@ -126,17 +111,17 @@ for i, row in df_clean.iterrows():
         ax.text(
             row["BodyAxis"] + 0.1, row["SweetAxis"],
             str(row["商品名"]),
-            fontsize=8, color='black', fontproperties=font_prop
+            fontsize=8, color='black'
         )
 
 # スライダー位置（ターゲット）マーク
 ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='基準スライダー位置')
 
 # 図の設定
-ax.set_xlabel("複合ボディ軸（PC1 & 甘味軸）", fontproperties=font_prop)
-ax.set_ylabel("甘味軸（PC2 + PC3）", fontproperties=font_prop)
-ax.set_title("散布図②：複合ボディ軸 vs 甘味軸", fontproperties=font_prop)
-ax.legend(title="Type", prop=font_prop)
+ax.set_xlabel("複合ボディ軸（PC1 & 甘味軸）")
+ax.set_ylabel("甘味軸（PC2 + PC3）")
+ax.set_title("散布図②：複合ボディ軸 vs 甘味軸")
+ax.legend(title="Type")
 ax.grid(True)
 
 # グラフ表示
