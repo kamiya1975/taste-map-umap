@@ -12,10 +12,11 @@ from scipy.spatial.distance import cdist
 # ✅ rcParams を初期化
 matplotlib.rcdefaults()
 
-# ✅ フォント設定（Streamlitではグラフ用に使う）
-font_path = '/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf'
-font_prop = fm.FontProperties(fname=font_path)
-print("✅ 使用フォント →", font_prop.get_name())
+# ✅ フォント設定（Streamlit対応）
+import matplotlib.font_manager as fm
+font_prop = fm.FontProperties(family='IPAexGothic')  # 必要なら 'Arial' や 'Noto Sans CJK JP'
+# print("✅ 使用フォント →", font_prop.get_name()) ← コメントアウト！
+
 
 # ✅ データ読み込み
 csv_path = '/mnt/data/Merged_TasteDataDB15.csv'
