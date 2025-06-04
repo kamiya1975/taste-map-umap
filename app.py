@@ -82,7 +82,7 @@ distances = cdist(target_xyz, all_xyz).flatten()
 umap_df["distance"] = distances
 df_sorted = umap_df.sort_values("distance").head(10)
 
-# ✅ Plotly図：Contour + Scatter（調整版）
+# ✅ Plotly 図：Contour + Scatter（整形版）
 fig = go.Figure()
 
 # --- カラーマップ定義 ---
@@ -93,38 +93,27 @@ color_map = {
     "Rose": "pink"
 }
 
-# 軸・凡例・タイトルを非表示に
-fig.update_layout(
-    showlegend=False,
-    title="",
-    margin=dict(l=0, r=0, t=0, b=0)
-)
-
-# 軸の目盛り非表示
-fig.update_xaxes(visible=False)
-fig.update_yaxes(visible=False)
-
-# 等高線（滑らか、透明度低め、背景、バーなし）
+# ✅ 等高線（背景・バーなし）
 fig.add_trace(go.Contour(
     x=umap_df["UMAP1"],
     y=umap_df["UMAP2"],
     z=umap_df["Z"],
     colorscale='YlOrBr',
     opacity=0.3,
-    showscale=False,  # バーを消す
+    showscale=False,
     contours=dict(
         coloring='heatmap',
         showlines=False
     )
 ))
 
-# 散布図（サイズを1/5に）
+# ✅ 散布図（小さく、色つき）
 fig.add_trace(go.Scatter(
     x=umap_df["UMAP1"],
     y=umap_df["UMAP2"],
     mode='markers',
     marker=dict(
-        size=3,  # 小さくする
+        size=3,  # 1/5 に小さく
         color=umap_df["Type"].map(color_map),
         opacity=0.85,
         line=dict(width=0.5, color='black')
@@ -133,8 +122,7 @@ fig.add_trace(go.Scatter(
     name="ワイン"
 ))
 
-
-# ピン（基準ワイン）
+# ✅ ピン（基準ワイン）
 fig.add_trace(go.Scatter(
     x=[target_row["UMAP1"]],
     y=[target_row["UMAP2"]],
@@ -145,17 +133,27 @@ fig.add_trace(go.Scatter(
     name='Selected'
 ))
 
-# レイアウト
+# ✅ レイアウト調整（4:3固定・レスポンシブ）
 fig.update_layout(
-    title=f"TasteMAP UMAP ＋ {selected_feature}：{selected_wine}",
-    xaxis_title="UMAP1",
-    yaxis_title="UMAP2",
-    height=600
+    showlegend=False,
+    title="",
+    margin=dict(l=0, r=0, t=0, b=0),
+    autosize=True,
+    height=600,
+)
+
+fig.update_xaxes(
+    visible=False,
+    scaleanchor="y",
+    scaleratio=4/3
+)
+
+fig.update_yaxes(
+    visible=False
 )
 
 # ✅ 表示
 st.plotly_chart(fig, use_container_width=True)
-
 
 # ✅ 一致度 TOP10 表
 st.subheader("📋 近いワイン TOP10")
