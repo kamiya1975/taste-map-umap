@@ -131,17 +131,14 @@ fig.update_layout(
     width=800,
     height=600,  # 4:3
     margin=dict(l=50, r=50, t=50, b=50),
-    xaxis=dict(
-        visible=False,
-        scaleanchor="y",  # ←これ重要！
-        scaleratio=1
-    ),
-    yaxis=dict(
-        visible=False
-    ),
+    xaxis=dict(visible=False),
+    yaxis=dict(visible=False),
     showlegend=False,
     title=""
 )
+
+# ★ 軸比を完全固定（これが超効く！）
+fig.update_yaxes(scaleanchor="x")
 
 
 # ✅ 表示
