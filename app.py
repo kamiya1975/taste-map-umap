@@ -93,6 +93,17 @@ color_map = {
     "Rose": "pink"
 }
 
+# 軸・凡例・タイトルを非表示に
+fig.update_layout(
+    showlegend=False,
+    title="",
+    margin=dict(l=0, r=0, t=0, b=0)
+)
+
+# 軸の目盛り非表示
+fig.update_xaxes(visible=False)
+fig.update_yaxes(visible=False)
+
 # 等高線（滑らか、透明度低め、背景、バーなし）
 fig.add_trace(go.Contour(
     x=umap_df["UMAP1"],
