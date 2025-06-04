@@ -133,27 +133,22 @@ fig.add_trace(go.Scatter(
     name='Selected'
 ))
 
-# ✅ レイアウト調整（4:3固定・レスポンシブ）
+# レイアウト調整（4:3固定）
 fig.update_layout(
     showlegend=False,
     title="",
     margin=dict(l=0, r=0, t=0, b=0),
-    autosize=True,
-    height=600,
+    width=800,
+    height=600
 )
 
-fig.update_xaxes(
-    visible=False,
-    scaleanchor="y",
-    scaleratio=4/3
-)
+# 軸
+fig.update_xaxes(visible=False)
+fig.update_yaxes(visible=False)
 
-fig.update_yaxes(
-    visible=False
-)
+# 表示
+st.plotly_chart(fig, use_container_width=False)  # ⭐️ ここ！！
 
-# ✅ 表示
-st.plotly_chart(fig, use_container_width=True)
 
 # ✅ 一致度 TOP10 表
 st.subheader("📋 近いワイン TOP10")
