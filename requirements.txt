@@ -6,3 +6,4 @@ umap-learn
 matplotlib
 seaborn
 scipy
+plotly 
