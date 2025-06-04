@@ -85,35 +85,35 @@ df_sorted = umap_df.sort_values("distance").head(10)
 # ✅ Plotly図：Contour + Scatter（調整版）
 fig = go.Figure()
 
-# 等高線（滑らか、透明度低め、背景）
+# 等高線（滑らか、透明度低め、背景、バーなし）
 fig.add_trace(go.Contour(
     x=umap_df["UMAP1"],
     y=umap_df["UMAP2"],
     z=umap_df["Z"],
     colorscale='YlOrBr',
-    opacity=0.3,   # ← 薄めに
-    showscale=True,
+    opacity=0.3,
+    showscale=False,  # バーを消す
     contours=dict(
-        coloring='heatmap',  # ← 滑らかに
+        coloring='heatmap',
         showlines=False
     )
 ))
 
-# 散布図（ワインタイプ色分け＋サイズ調整）
-color_map = {"White": "blue", "Red": "red", "Spa": "purple", "Rose": "pink"}
+# 散布図（サイズを1/5に）
 fig.add_trace(go.Scatter(
     x=umap_df["UMAP1"],
     y=umap_df["UMAP2"],
     mode='markers',
     marker=dict(
-        size=14,   # ← 大きめ
+        size=3,  # 小さくする
         color=umap_df["Type"].map(color_map),
         opacity=0.85,
-        line=dict(width=0.5, color='black')  # 境界線を薄く
+        line=dict(width=0.5, color='black')
     ),
     text=umap_df["商品名"],
     name="ワイン"
 ))
+
 
 # ピン（基準ワイン）
 fig.add_trace(go.Scatter(
