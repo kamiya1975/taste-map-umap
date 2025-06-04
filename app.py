@@ -1,25 +1,26 @@
-# app.py
+# app.py（散布図＋等高線のみ版）
+
 import streamlit as st
 import pandas as pd
 import numpy as np
 from sklearn.impute import KNNImputer
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
 import umap
-from scipy.spatial.distance import cdist
-import plotly.graph_objects as go
+import matplotlib.pyplot as plt
+import matplotlib
+import seaborn as sns
+import matplotlib.font_manager as fm
+
+# ✅ フォント設定
+font_path = '/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf'
+font_prop = fm.FontProperties(fname=font_path)
+matplotlib.rcdefaults()
 
 # ✅ データ読み込み
 df = pd.read_csv("Merged_TasteDataDB15.csv")
 
-# ✅ 官能軸セット
-feature_components = {
-    "甘味": ["ブドウ糖", "果糖"],
-    "酸味": ["リンゴ酸", "酒石酸"],
-    "渋味": ["総ポリフェノール", "グリセリン", "pH"],
-}
-
-# ✅ 特徴量リスト
+# ✅ パラメータ
+z_variables = ["果糖", "ブドウ糖"]
 features = [
     "20mm_L*", "20mm_a*", "20mm_b*",
     "Ethyl acetate", "Propanol", "2-Methylbutyl acetate", "Ethyl lactate", "Acetic acid",
@@ -35,115 +36,66 @@ features = [
     "揮発性酸", "リンゴ酸", "乳酸", "酒石酸", "エキス", "pH", "グリセリン",
     "グルコン酸", "総ポリフェノール"
 ]
+target_jans = [
+    "4935919319140", "4935919080316", "4935919058186", "850832004260", "4935919071604",
+    "4935919193559", "4935919197175", "4935919052504", "4935919080378", "blendF",
+    "4935919213578", "4935919961554", "4935919194624", "4935919080965", "850755000028",
+]
 
-# ✅ 特徴量データ
+# ✅ 特徴量処理
 X = df[features]
 imputer = KNNImputer(n_neighbors=5)
 X_imputed = imputer.fit_transform(X)
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X_imputed)
+X_scaled = StandardScaler().fit_transform(X_imputed)
 
-# ✅ PCA → UMAP
-pca = PCA(n_components=10)
-X_pca = pca.fit_transform(X_scaled)
+# ✅ UMAP
 reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, random_state=42)
-embedding_umap = reducer.fit_transform(X_pca)
+embedding = reducer.fit_transform(X_scaled)
 
-# ✅ UMAP DataFrame
-umap_df = pd.DataFrame(embedding_umap, columns=["UMAP1", "UMAP2"])
-umap_df["JAN"] = df["JAN"].astype(str)
-umap_df["Type"] = df["Type"] if "Type" in df.columns else "Unknown"
-umap_df["商品名"] = df["商品名"] if "商品名" in df.columns else umap_df["JAN"]
+# ✅ データ整理
+plot_df = pd.DataFrame(embedding, columns=["UMAP1", "UMAP2"])
+plot_df["JAN"] = df["JAN"].astype(str)
+plot_df["Type"] = df["Type"]
 
-# ✅ Streamlit UI
-st.title("TasteMAP UMAP ＋ 等高線 ＋ 一致度")
+# ✅ 描画
+fig = plt.figure(figsize=(12, 9))  # ← 4:3 = 12:9 固定 🎨
 
-# ✅ 等高線 軸選択
-selected_feature = st.selectbox("等高線軸を選択", list(feature_components.keys()))
+# ▼ 等高線
+for z_var in z_variables:
+    if z_var in df.columns:
+        try:
+            plot_df["Z"] = df[z_var].astype(float)
+            sns.kdeplot(
+                x=plot_df["UMAP1"], y=plot_df["UMAP2"],
+                weights=plot_df["Z"],
+                fill=True, cmap="YlOrBr", levels=30, alpha=0.25, bw_adjust=0.7,
+                label=z_var
+            )
+        except Exception as e:
+            st.warning(f"⚠️ 等高線エラー: {z_var} → {e}")
 
-# ✅ 合成Z軸
-components = feature_components[selected_feature]
-z_combined = df[components].sum(axis=1).values
-umap_df["Z"] = z_combined
-
-# ✅ 基準ワイン選択
-selected_wine = st.selectbox("🔍 近いワインを出す基準ワインを選択", umap_df["商品名"].tolist())
-
-# ✅ 一致度計算
-target_row = umap_df[umap_df["商品名"] == selected_wine].iloc[0]
-target_xyz = np.array([[target_row["UMAP1"], target_row["UMAP2"], target_row["Z"]]])
-all_xyz = umap_df[["UMAP1", "UMAP2", "Z"]].values
-distances = cdist(target_xyz, all_xyz).flatten()
-umap_df["distance"] = distances
-df_sorted = umap_df.sort_values("distance").head(10)
-
-# ✅ Plotly 図
-fig = go.Figure()
-
-# --- カラーマップ ---
-color_map = {
-    "White": "green",
-    "Red": "red",
-    "Spa": "blue",
-    "Rose": "pink"
-}
-
-# --- 等高線 ---
-fig.add_trace(go.Contour(
-    x=umap_df["UMAP1"],
-    y=umap_df["UMAP2"],
-    z=umap_df["Z"],
-    colorscale='YlOrBr',
-    opacity=0.3,
-    showscale=False,
-    contours=dict(coloring='heatmap', showlines=False)
-))
-
-# --- 散布図（小さく） ---
-fig.add_trace(go.Scatter(
-    x=umap_df["UMAP1"],
-    y=umap_df["UMAP2"],
-    mode='markers',
-    marker=dict(
-        size=3,
-        color=umap_df["Type"].map(color_map),
-        opacity=0.85,
-        line=dict(width=0.5, color='black')
-    ),
-    text=umap_df["商品名"],
-    name="ワイン"
-))
-
-# --- ピン（基準ワイン） ---
-fig.add_trace(go.Scatter(
-    x=[target_row["UMAP1"]],
-    y=[target_row["UMAP2"]],
-    mode='markers+text',
-    marker=dict(size=18, color='black', symbol='circle-open'),
-    text=[selected_wine],
-    textposition='top center',
-    name='Selected'
-))
-
-# --- レイアウト (4:3固定 + 軸比固定) ---
-fig.update_layout(
-    autosize=False,
-    width=800,
-    height=600,  # 4:3
-    margin=dict(l=50, r=50, t=50, b=50),
-    xaxis=dict(visible=False),
-    yaxis=dict(visible=False),
-    showlegend=False,
-    title=""
+# ▼ 散布図
+sns.scatterplot(
+    data=plot_df, x="UMAP1", y="UMAP2",
+    hue="Type", palette="Set2", s=50, edgecolor='k', alpha=0.85
 )
 
-# ★ 軸比を完全固定（これが超効く！）
-fig.update_yaxes(scaleanchor="x")
+# ▼ ターゲットJAN ラベル
+for i, row in plot_df.iterrows():
+    if row["JAN"] in target_jans:
+        product_name = df.loc[df["JAN"].astype(str) == row["JAN"], "商品名"].values
+        label = product_name[0] if len(product_name) > 0 else row["JAN"]
 
+        plt.scatter(row["UMAP1"], row["UMAP2"], c='red', s=60, edgecolor='k', zorder=5)
+        plt.text(row["UMAP1"], row["UMAP2"], label, fontsize=9, color='red', zorder=6, fontproperties=font_prop)
 
-# ✅ 表示
-st.plotly_chart(fig, use_container_width=False)
+# ▼ 図設定
+plt.title(f"UMAP + 等高線: {', '.join(z_variables)}", fontsize=14, fontproperties=font_prop)
+plt.xlabel("UMAP1", fontproperties=font_prop)
+plt.ylabel("UMAP2", fontproperties=font_prop)
+plt.legend(title="Type & 成分", loc='upper right')
+plt.grid(True)
+plt.tight_layout()
 
-# ✅ 一致度 TOP10 表
-st.subheader("📋 近いワイン TOP10")
-st.dataframe(df_sorted[["Type", "商品名", "distance"]].reset_index(drop=True))
+# ✅ Streamlit で表示
+st.pyplot(fig)
