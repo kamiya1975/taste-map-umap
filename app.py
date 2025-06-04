@@ -1,4 +1,5 @@
 # app.py
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -7,8 +8,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import umap
 from scipy.spatial.distance import cdist
-import matplotlib.pyplot as plt
-import seaborn as sns
 import plotly.express as px
 
 # ✅ データ読み込み
@@ -62,73 +61,55 @@ umap_df["JAN"] = df["JAN"].astype(str)
 umap_df["Type"] = df["Type"] if "Type" in df.columns else "Unknown"
 umap_df["商品名"] = df["商品名"] if "商品名" in df.columns else umap_df["JAN"]
 
-# ✅ Streamlit UI
-st.title("TasteMAP UMAP ＋ 等高線 ＋ 一致度")
+# ✅ Streamlit App
+st.set_page_config(page_title="PCA UMAP TasteMAP 統合", layout="wide")
+st.title("TasteMAP UMAP + 等高線 + 一致度")
 
-# 等高線選択
+# ✅ 等高線軸プルダウン
 selected_feature = st.selectbox("等高線軸を選択", list(feature_components.keys()))
 
-# JANコード入力
-jan_input = st.text_input("一致度用 JANコード（空欄でもOK）")
+# ✅ 商品名選択プルダウン（JANではなく商品名に変更！）
+selected_product = st.selectbox("🔍 近いワインを出す基準ワインを選択", umap_df["商品名"].unique())
 
-# ✅ Z軸 合成
+# ✅ 合成Z軸（生値の和）
 components = feature_components[selected_feature]
 z_combined = df[components].sum(axis=1).values
 umap_df["Z"] = z_combined
 
-# ✅ Plotly で散布図
+# ✅ plotly グラフ作成
 fig = px.scatter(
     umap_df,
     x="UMAP1", y="UMAP2",
     color="Type",
     hover_data=["商品名", "JAN"],
-    size_max=15
+    size=z_combined,
+    size_max=12,
+    color_discrete_sequence=px.colors.qualitative.Set2
 )
 
-# ✅ 等高線（density heatmap overlay）
-fig.update_traces(marker=dict(size=8, opacity=0.8))
-fig.add_trace(
-    px.density_heatmap(
-        umap_df,
-        x="UMAP1", y="UMAP2",
-        z="Z",
-        nbinsx=50, nbinsy=50,
-        color_continuous_scale="YlOrBr"
-    ).data[0]
+# ✅ 基準商品に赤いピンを立てる
+selected_row = umap_df[umap_df["商品名"] == selected_product].iloc[0]
+fig.add_scatter(
+    x=[selected_row["UMAP1"]],
+    y=[selected_row["UMAP2"]],
+    mode="markers+text",
+    marker=dict(color="red", size=20, line=dict(color="black", width=2)),
+    text=[selected_product],
+    textposition="top center",
+    name="Selected"
 )
 
+# ✅ グラフ表示
 st.plotly_chart(fig, use_container_width=True)
 
-# ✅ 一致度（JAN 入力時）
-if jan_input != "":
-    if jan_input not in umap_df["JAN"].values:
-        st.warning(f"JAN {jan_input} はデータに存在しません。")
-    else:
-        target_row = umap_df[umap_df["JAN"] == jan_input].iloc[0]
-        target_xyz = np.array([[target_row["UMAP1"], target_row["UMAP2"], target_row["Z"]]])
-        all_xyz = umap_df[["UMAP1", "UMAP2", "Z"]].values
-        distances = cdist(target_xyz, all_xyz).flatten()
-        umap_df["distance"] = distances
-        df_sorted = umap_df.sort_values("distance").head(10)
-        st.subheader(f"一致度 TOP10 （基準JAN: {jan_input}）")
-        st.dataframe(df_sorted[["Type", "商品名", "JAN", "distance"]])
+# ✅ 近傍TOP10計算
+target_xyz = np.array([[selected_row["UMAP1"], selected_row["UMAP2"], selected_row["Z"]]])
+all_xyz = umap_df[["UMAP1", "UMAP2", "Z"]].values
+distances = cdist(target_xyz, all_xyz).flatten()
+umap_df["distance"] = distances
 
-# ✅ マップクリック対応
-st.subheader("🔍 マップ上をクリックすると、近いワイン10本を表示")
+df_sorted = umap_df.sort_values("distance").head(10)
 
-# Plotly のクリックイベントを取得
-click = st.plotly_events(fig, click_event=True, select_event=False)
-
-if click:
-    clicked_x = click[0]["x"]
-    clicked_y = click[0]["y"]
-    st.write(f"クリック位置: ({clicked_x:.2f}, {clicked_y:.2f})")
-
-    target_point = np.array([[clicked_x, clicked_y]])
-    all_xy = umap_df[["UMAP1", "UMAP2"]].values
-    distances = cdist(target_point, all_xy).flatten()
-    umap_df["click_distance"] = distances
-
-    df_sorted_click = umap_df.sort_values("click_distance").head(10)
-    st.dataframe(df_sorted_click[["Type", "商品名", "JAN", "click_distance"]])
-
+# ✅ TOP10 表示
+st.subheader("📋 近いワイン TOP10")
+st.dataframe(df_sorted[["Type", "商品名", "distance"]], use_container_width=True)
