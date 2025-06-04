@@ -19,7 +19,7 @@ font_prop = fm.FontProperties(family='IPAexGothic')  # 必要なら 'Arial' や 
 
 
 # ✅ データ読み込み
-csv_path = '/mnt/data/Merged_TasteDataDB15.csv'
+csv_path = 'Merged_TasteDataDB15.csv'
 df = pd.read_csv(csv_path)
 
 # ✅ 対象のJANコード
