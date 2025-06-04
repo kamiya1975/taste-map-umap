@@ -131,11 +131,18 @@ fig.update_layout(
     width=800,
     height=600,  # 4:3
     margin=dict(l=50, r=50, t=50, b=50),
-    xaxis=dict(visible=False, scaleanchor="y", scaleratio=1),  # 軸比固定
-    yaxis=dict(visible=False),
+    xaxis=dict(
+        visible=False,
+        scaleanchor="y",  # ←これ重要！
+        scaleratio=1
+    ),
+    yaxis=dict(
+        visible=False
+    ),
     showlegend=False,
     title=""
 )
+
 
 # ✅ 表示
 st.plotly_chart(fig, use_container_width=False)
