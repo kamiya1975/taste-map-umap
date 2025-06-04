@@ -12,16 +12,42 @@ from scipy.spatial.distance import cdist
 # ✅ rcParams を初期化
 matplotlib.rcdefaults()
 
-# ✅ フォント設定（Streamlit対応）
-import matplotlib.font_manager as fm
-font_prop = fm.FontProperties(family='IPAexGothic')  # 必要なら 'Arial' や 'Noto Sans CJK JP'
-# print("✅ 使用フォント →", font_prop.get_name()) ← コメントアウト！
+# ✅ フォント設定（日本語 fallback 対応版）
+font_candidates = ['Noto Sans CJK JP', 'Noto Sans JP', 'IPAexGothic', 'IPA Gothic', 'Arial', 'DejaVu Sans']
+font_prop = None
 
+for font_name in font_candidates:
+    try:
+        font_prop = fm.FontProperties(family=font_name)
+        break
+    except:
+        continue
 
-# ✅ データ読み込み
-csv_path = 'Merged_TasteDataDB15.csv'
-df = pd.read_csv(csv_path)
+if font_prop:
+    st.write(f"✅ 使用フォント → {font_prop.get_name()}")
+else:
+    st.write("⚠️ 日本語フォントが見つかりません。デフォルトを使用します。")
+    font_prop = fm.FontProperties()
 
+# ✅ Streamlit タイトル
+st.title("🎈 TasteMAP：PCA合成軸マップ with スライダー一致度")
+
+# ✅ ファイルアップローダー
+uploaded_file = st.file_uploader("📂 CSVファイルをアップロードしてください", type="csv")
+
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file)
+    st.success("✅ データ読み込み成功！")
+else:
+    st.warning("⚠️ CSVファイルをアップロードしてください。")
+    st.stop()
+
+# ✅ 対象のJANコード
+target_jans = [
+    "4935919319140", "4935919080316", "4935919058186", "850832004260", "4935919071604",
+    "4935919193559", "4935919197175", "4935919052504", "4935919080378", "blendF",
+    "4935919213578", "4935919961554", "4935919194624", "4935919080965",
+]
 
 # ✅ 使用する成分
 features = [
@@ -66,24 +92,20 @@ color_map = {
     "ロゼ": "pink", "スパークリング": "blue", "白": "gold", "赤": "red"
 }
 
-# ======================================
-# ✅ Streamlit アプリ部
-# ======================================
-
-st.title("🎈 TasteMAP：PCA合成軸マップ with スライダー一致度")
-
 # ✅ スライダー（PC1, PC2）
 st.markdown("#### 🔍 基準ワインの印象調整（スライダー）")
 slider_pc1 = st.slider("← PC1（軽やか） / PC1（濃厚） →", 0, 100, 50)
 slider_pc2 = st.slider("← PC2（甘さ控えめ） / PC2（甘さ強め） →", 0, 100, 50)
 
-# ✅ スライダー → マップ座標（正規化して -3 ～ +3 スケール）
-# PCAのスケールを約±3想定（実データ確認しながら微調整可）
+# ✅ スライダー → マップ座標（スケーリング）
+# PCAのスケールを約±3想定
 target_x = (slider_pc1 - 50) / 50 * 3
 target_y = (slider_pc2 - 50) / 50 * 3
 
-# ✅ 散布図表示
+# ✅ 散布図
 fig, ax = plt.subplots(figsize=(16, 12))
+
+# Typeごとにプロット
 for wine_type in df_clean["Type"].unique():
     mask = df_clean["Type"] == wine_type
     ax.scatter(
@@ -94,7 +116,7 @@ for wine_type in df_clean["Type"].unique():
         color=color_map.get(wine_type, "gray")
     )
 
-# ✅ JANコードハイライト
+# JANコードハイライト
 for i, row in df_clean.iterrows():
     if str(row["JAN"]) in target_jans:
         ax.scatter(
@@ -107,17 +129,17 @@ for i, row in df_clean.iterrows():
             fontsize=8, color='black', fontproperties=font_prop
         )
 
-# ✅ スライダー位置（ターゲット）マーク
+# スライダー位置（ターゲット）マーク
 ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='基準スライダー位置')
 
-# ✅ 図の設定
+# 図の設定
 ax.set_xlabel("複合ボディ軸（PC1 & 甘味軸）", fontproperties=font_prop)
 ax.set_ylabel("甘味軸（PC2 + PC3）", fontproperties=font_prop)
 ax.set_title("散布図②：複合ボディ軸 vs 甘味軸", fontproperties=font_prop)
 ax.legend(title="Type", prop=font_prop)
 ax.grid(True)
 
-# ✅ 表示
+# グラフ表示
 st.pyplot(fig)
 
 # ✅ 一致度計算
@@ -127,6 +149,6 @@ distances = cdist(target_xy, all_xy).flatten()
 df_clean["distance"] = distances
 df_sorted = df_clean.sort_values("distance").head(10)
 
-# ✅ 一致度TOP10
+# ✅ 一致度TOP10 表示
 st.subheader("📋 近いワイン TOP10")
 st.dataframe(df_sorted[["Type", "商品名", "distance"]].reset_index(drop=True))
