@@ -38,19 +38,14 @@ features = [
 
 # ✅ 特徴量データ
 X = df[features]
-
-# ✅ 欠損補完
 imputer = KNNImputer(n_neighbors=5)
 X_imputed = imputer.fit_transform(X)
-
-# ✅ 標準化
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X_imputed)
 
 # ✅ PCA → UMAP
 pca = PCA(n_components=10)
 X_pca = pca.fit_transform(X_scaled)
-
 reducer = umap.UMAP(n_neighbors=15, min_dist=0.1, random_state=42)
 embedding_umap = reducer.fit_transform(X_pca)
 
@@ -82,10 +77,10 @@ distances = cdist(target_xyz, all_xyz).flatten()
 umap_df["distance"] = distances
 df_sorted = umap_df.sort_values("distance").head(10)
 
-# ✅ Plotly 図：Contour + Scatter（整形版）
+# ✅ Plotly 図
 fig = go.Figure()
 
-# --- カラーマップ定義 ---
+# --- カラーマップ ---
 color_map = {
     "White": "green",
     "Red": "red",
@@ -93,7 +88,7 @@ color_map = {
     "Rose": "pink"
 }
 
-# ✅ 等高線（背景・バーなし）
+# --- 等高線 ---
 fig.add_trace(go.Contour(
     x=umap_df["UMAP1"],
     y=umap_df["UMAP2"],
@@ -101,19 +96,16 @@ fig.add_trace(go.Contour(
     colorscale='YlOrBr',
     opacity=0.3,
     showscale=False,
-    contours=dict(
-        coloring='heatmap',
-        showlines=False
-    )
+    contours=dict(coloring='heatmap', showlines=False)
 ))
 
-# ✅ 散布図（小さく、色つき）
+# --- 散布図（小さく） ---
 fig.add_trace(go.Scatter(
     x=umap_df["UMAP1"],
     y=umap_df["UMAP2"],
     mode='markers',
     marker=dict(
-        size=3,  # 1/5 に小さく
+        size=3,
         color=umap_df["Type"].map(color_map),
         opacity=0.85,
         line=dict(width=0.5, color='black')
@@ -122,7 +114,7 @@ fig.add_trace(go.Scatter(
     name="ワイン"
 ))
 
-# ✅ ピン（基準ワイン）
+# --- ピン（基準ワイン） ---
 fig.add_trace(go.Scatter(
     x=[target_row["UMAP1"]],
     y=[target_row["UMAP2"]],
@@ -133,22 +125,20 @@ fig.add_trace(go.Scatter(
     name='Selected'
 ))
 
-# レイアウト調整（4:3固定）
+# --- レイアウト (4:3固定 + 軸比固定) ---
 fig.update_layout(
-    showlegend=False,
-    title="",
-    margin=dict(l=0, r=0, t=0, b=0),
+    autosize=False,
     width=800,
-    height=600
+    height=600,  # 4:3
+    margin=dict(l=50, r=50, t=50, b=50),
+    xaxis=dict(visible=False, scaleanchor="y", scaleratio=1),  # 軸比固定
+    yaxis=dict(visible=False),
+    showlegend=False,
+    title=""
 )
 
-# 軸
-fig.update_xaxes(visible=False)
-fig.update_yaxes(visible=False)
-
-# 表示
-st.plotly_chart(fig, use_container_width=False)  # ⭐️ ここ！！
-
+# ✅ 表示
+st.plotly_chart(fig, use_container_width=False)
 
 # ✅ 一致度 TOP10 表
 st.subheader("📋 近いワイン TOP10")
