@@ -39,7 +39,7 @@ if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
     st.success("✅ データ読み込み成功！")
 else:
-    st.warning("⚠️ CSVファイルをアップロードしてください。")
+    st.warning("Merged_TasteDataDB15.csv")
     st.stop()
 
 # ✅ 対象のJANコード
