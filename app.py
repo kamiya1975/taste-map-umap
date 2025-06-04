@@ -87,9 +87,9 @@ fig = go.Figure()
 
 # --- カラーマップ定義 ---
 color_map = {
-    "White": "blue",
+    "White": "green",
     "Red": "red",
-    "Spa": "violet",
+    "Spa": "blue",
     "Rose": "pink"
 }
 
