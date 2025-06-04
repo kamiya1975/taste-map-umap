@@ -33,7 +33,7 @@ else:
 st.title("🎈 TasteMAP：PCA合成軸マップ with スライダー一致度")
 
 # ✅ ファイルアップローダー
-uploaded_file = st.file_uploader("📂 CSVファイルをアップロードしてください", type="csv")
+uploaded_file = st.file_uploader("Merged_TasteDataDB15.csv", type="csv")
 
 if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
