@@ -1,0 +1,9 @@
+# .streamlit/config.toml
+
+[theme]
+base="light"
+
+[global]
+# matplotlib 日本語フォント fallback 設定
+# Streamlit Cloud に Noto Sans CJK がある前提
+font = "Noto Sans CJK JP"
