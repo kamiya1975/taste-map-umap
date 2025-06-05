@@ -78,10 +78,13 @@ st.subheader("基準のワインを飲んだ印象は？")
 slider_pc2 = st.slider("←　こんなに甘みはいらない 　　　　　　　　　　　　 　　　　　　　　　　　　もう少し甘みがほしいな　→", 0, 100, 50)
 slider_pc1 = st.slider("←　もう少し軽やかな感じがいいな 　　　　　　　　　　　　 　　　　　　もう少し濃厚なコクがほしいな　→", 0, 100, 50)
 
-# ✅ スライダー → マップ座標（スケーリング）
-# PCAのスケールを約±3想定
-target_x = (slider_pc1 - 50) / 50 * 3
-target_y = (slider_pc2 - 50) / 50 * 3
+# ✅ PCA軸の min/max を取得
+x_min, x_max = df_clean["BodyAxis"].min(), df_clean["BodyAxis"].max()
+y_min, y_max = df_clean["SweetAxis"].min(), df_clean["SweetAxis"].max()
+
+# ✅ スライダー値を軸スケールに変換
+target_x = x_min + (slider_pc1 / 100) * (x_max - x_min)
+target_y = y_min + (slider_pc2 / 100) * (y_max - y_min)
 
 # ✅ 一致度計算
 target_xy = np.array([[target_x, target_y]])
