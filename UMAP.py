@@ -102,7 +102,7 @@ ax.scatter(
 )
 
 # --- レイアウト調整 ---
-ax.set_title(f"UMAP + 等高線: {selected_feature}", fontsize=14)
+ax.set_title(f"UMAP: {selected_feature}", fontsize=14)
 ax.set_xlabel("UMAP1")
 ax.set_ylabel("UMAP2")
 ax.legend(title="Type", loc='upper right')
