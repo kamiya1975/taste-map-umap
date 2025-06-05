@@ -21,7 +21,7 @@ title_css = """
 <style>
 /* Streamlitのタイトル（emotionクラス対応） */
 h1 {
-    font-size: 12px !important;
+    font-size: 32px !important;
     margin-bottom: 10px !important;
 }
 </style>
@@ -29,7 +29,7 @@ h1 {
 st.markdown(title_css, unsafe_allow_html=True)
 
 # ✅ タイトル
-# st.title("TasteMAPテスト画面")
+st.title("TasteMAPテスト画面")
 
 # ✅ スライダー赤丸 完全対応版
 slider_thumb_css = """
@@ -46,7 +46,6 @@ div[role="slider"] {
 </style>
 """
 st.markdown(slider_thumb_css, unsafe_allow_html=True)
-
 
 # ✅ スライダー数値非表示CSS
 hide_slider_value_css = """
@@ -103,8 +102,8 @@ color_map = {
 
 # ✅ スライダー（PC1, PC2）
 st.subheader("基準のワインを飲んだ印象は？")
-slider_pc1 = st.slider("←　もう少し軽やかな感じがいいな 　　　　　　　　　　　　 　　　　　　もう少し濃厚なコクがほしいな　→", 0, 100, 50)
 slider_pc2 = st.slider("←　こんなに甘みはいらない 　　　　　　　　　　　　 　　　　　　　　　　　　もう少し甘みがほしいな　→", 0, 100, 50)
+slider_pc1 = st.slider("←　もう少し軽やかな感じがいいな 　　　　　　　　　　　　 　　　　　　もう少し濃厚なコクがほしいな　→", 0, 100, 50)
 
 # ✅ PCA軸の min/max を取得
 x_min, x_max = df_clean["BodyAxis"].min(), df_clean["BodyAxis"].max()
@@ -114,12 +113,15 @@ y_min, y_max = df_clean["SweetAxis"].min(), df_clean["SweetAxis"].max()
 target_x = x_min + (slider_pc1 / 100) * (x_max - x_min)
 target_y = y_min + (slider_pc2 / 100) * (y_max - y_min)
 
+# ✅ 検索対象から "blendF" を除外
+df_search = df_clean[df_clean["JAN"] != "blendF"].copy()
+
 # ✅ 一致度計算
 target_xy = np.array([[target_x, target_y]])
-all_xy = df_clean[["BodyAxis", "SweetAxis"]].values
+all_xy = df_search[["BodyAxis", "SweetAxis"]].values
 distances = cdist(target_xy, all_xy).flatten()
-df_clean["distance"] = distances
-df_sorted = df_clean.sort_values("distance").head(10)
+df_search["distance"] = distances
+df_sorted = df_search.sort_values("distance").head(10)
 
 # ✅ 散布図
 fig, ax = plt.subplots(figsize=(8, 8))
@@ -164,9 +166,8 @@ ax.set_yticks([])
 # ✅ グラフ表示
 st.pyplot(fig)
 
-
 # ✅ 近いワイン TOP10 表示
 st.subheader("近いワイン TOP10")
-df_sorted_display = df_sorted[["Type", "商品名", "distance"]].reset_index(drop=True)
+df_sorted_display = df_sorted[["Type", "JAN", "distance"]].reset_index(drop=True)
 df_sorted_display.index += 1
 st.dataframe(df_sorted_display)
