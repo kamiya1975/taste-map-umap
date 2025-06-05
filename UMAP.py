@@ -3,10 +3,11 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from sklearn.impute import KNNImputer
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.decomposition import PCA
 import umap
 import plotly.graph_objects as go
+from scipy.interpolate import griddata  # ✅ 補間用ライブラリ
 
 # ✅ データ読み込み
 df = pd.read_csv("Merged_TasteDataDB15.csv")
@@ -68,6 +69,23 @@ components = feature_components[selected_feature]
 z_combined = df[components].sum(axis=1).values
 umap_df["Z"] = z_combined
 
+# ✅ Z軸スケーリング（MinMaxScaler推奨）
+scaler = MinMaxScaler()
+umap_df["Z_scaled"] = scaler.fit_transform(umap_df[["Z"]])
+
+# ✅ grid化（補間用 meshgrid 作成）
+xi = np.linspace(umap_df["UMAP1"].min(), umap_df["UMAP1"].max(), 100)
+yi = np.linspace(umap_df["UMAP2"].min(), umap_df["UMAP2"].max(), 100)
+xi, yi = np.meshgrid(xi, yi)
+
+# ✅ griddata 補間
+zi = griddata(
+    (umap_df["UMAP1"], umap_df["UMAP2"]),
+    umap_df["Z_scaled"],
+    (xi, yi),
+    method='cubic'  # 'linear' でもOK（安定性高め）
+)
+
 # ✅ Plotly図
 fig = go.Figure()
 
@@ -81,9 +99,9 @@ color_map = {
 
 # --- 等高線 ---
 fig.add_trace(go.Contour(
-    x=umap_df["UMAP1"],
-    y=umap_df["UMAP2"],
-    z=umap_df["Z"],
+    x=xi[0],          # gridのx軸
+    y=yi[:, 0],       # gridのy軸
+    z=zi,             # 補間された z
     colorscale='YlOrBr',
     opacity=0.3,
     showscale=False,
