@@ -34,8 +34,8 @@ st.title("TasteMAPテスト画面")
 slider_thumb_css = """
 <style>
 input[type=range]::-webkit-slider-thumb {
-    height: 24px;
-    width: 24px;
+    height: 48px;
+    width: 48px;
     background: red;
     border-radius: 50%;
     border: none;
@@ -44,8 +44,8 @@ input[type=range]::-webkit-slider-thumb {
 }
 
 input[type=range]::-moz-range-thumb {
-    height: 24px;
-    width: 24px;
+    height: 48px;
+    width: 48px;
     background: red;
     border-radius: 50%;
     border: none;
