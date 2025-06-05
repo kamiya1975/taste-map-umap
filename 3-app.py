@@ -137,16 +137,20 @@ for wine_type in df_clean["Type"].unique():
         color=color_map.get(wine_type, "gray")
     )
 
-# ✅ 一致度TOP10 ハイライト（順位ラベル表示）
+# ✅ 一致度TOP10 ハイライト（順位ラベル表示 改良版）
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
+    # 黒丸
     ax.scatter(
         row["BodyAxis"], row["SweetAxis"],
         color='black', edgecolor='white', s=120, marker='o'
     )
+    # 順位番号 → 白文字・中央
     ax.text(
-        row["BodyAxis"] + 0.1, row["SweetAxis"],
-        str(idx),  # ← 順位表示
-        fontsize=9, color='black'
+        row["BodyAxis"], row["SweetAxis"],  # 中央
+        str(idx),
+        fontsize=9,
+        color='white',
+        ha='center', va='center'
     )
 
 # ✅ スライダー位置（ターゲット）マーク
