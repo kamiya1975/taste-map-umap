@@ -13,11 +13,6 @@ from scipy.spatial.distance import cdist
 # ✅ rcParams を初期化
 matplotlib.rcdefaults()
 
-# ✅ フォント fallback をグローバル設定（安全版 ✅）
-font_path = os.path.join(os.path.dirname(__file__), "fonts", "NotoSansCJKjp-Regular.otf")
-font_prop = fm.FontProperties(fname=font_path)
-matplotlib.rcParams['font.family'] = font_prop.get_name()
-
 # ✅ Streamlit タイトル
 st.title("📍 TasteMAP：PCA合成軸マップ with スライダー一致度")
 
