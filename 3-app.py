@@ -28,6 +28,9 @@ h1 {
 """
 st.markdown(title_css, unsafe_allow_html=True)
 
+# ✅ タイトル
+st.title("TasteMAPテスト画面")
+
 # ✅ スライダー赤丸 完全対応版
 slider_thumb_css = """
 <style>
