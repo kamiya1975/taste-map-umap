@@ -83,7 +83,7 @@ df_clean["distance"] = distances
 df_sorted = df_clean.sort_values("distance").head(10)
 
 # ✅ 散布図
-fig, ax = plt.subplots(figsize=(16, 12))
+fig, ax = plt.subplots(figsize=(12, 16))
 
 # Typeごとにプロット
 for wine_type in df_clean["Type"].unique():
