@@ -16,8 +16,54 @@ matplotlib.rcdefaults()
 # ✅ フォント fallback をグローバル設定（GitHubでも安全）
 matplotlib.rc('font', family='Arial Unicode MS')
 
-# ✅ Streamlit タイトル
+# ✅ タイトルCSS（文字サイズ調整）
+title_css = """
+<style>
+h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+</style>
+"""
+st.markdown(title_css, unsafe_allow_html=True)
+
+# ✅ タイトル
 st.title("TasteMAPテスト画面")
+
+# ✅ スライダー赤丸サイズ調整CSS
+slider_thumb_css = """
+<style>
+input[type=range]::-webkit-slider-thumb {
+    height: 24px;
+    width: 24px;
+    background: red;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    margin-top: -10px;
+}
+
+input[type=range]::-moz-range-thumb {
+    height: 24px;
+    width: 24px;
+    background: red;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+}
+</style>
+"""
+st.markdown(slider_thumb_css, unsafe_allow_html=True)
+
+# ✅ スライダー数値非表示CSS
+hide_slider_value_css = """
+<style>
+.stSlider > div > div > div > div > div {
+    visibility: hidden;
+}
+</style>
+"""
+st.markdown(hide_slider_value_css, unsafe_allow_html=True)
 
 # ✅ データ読み込み
 df = pd.read_csv("Merged_TasteDataDB15.csv")
@@ -61,17 +107,6 @@ color_map = {
     "Spa": "blue", "White": "gold", "Red": "red", "Rose": "pink",
     "ロゼ": "pink", "スパークリング": "blue", "白": "gold", "赤": "red"
 }
-
-# ✅ ★ スライダー赤丸数値 非表示CSS
-hide_slider_value_css = """
-<style>
-/* Streamlitスライダーの数値部分を非表示にする */
-.stSlider > div > div > div > div > div {
-    visibility: hidden;
-}
-</style>
-"""
-st.markdown(hide_slider_value_css, unsafe_allow_html=True)
 
 # ✅ スライダー（PC1, PC2）
 st.subheader("基準のワインを飲んだ印象は？")
