@@ -61,7 +61,7 @@ umap_df["Type"] = df["Type"] if "Type" in df.columns else "Unknown"
 umap_df["商品名"] = df["商品名"] if "商品名" in df.columns else umap_df["JAN"]
 
 # ✅ Streamlit UI
-st.title("UMAP + seaborn.kdeplot版 等高線")
+st.title("UMAP")
 
 # ✅ 等高線 軸選択
 selected_feature = st.selectbox("等高線軸を選択", list(feature_components.keys()))
