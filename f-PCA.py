@@ -168,7 +168,7 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
 ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='point')
 
 # ✅ 図の設定
-ax.set_xlabel("- Body +")
+ax.set_xlabel("Body")
 ax.set_ylabel("- Sweet +")
 ax.set_title("TasteMAP")
 ax.legend(title="Type")
