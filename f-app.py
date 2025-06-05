@@ -46,8 +46,8 @@ X_pca = pca.fit_transform(X_scaled)
 
 # ✅ スライダー（PC1, PC2）
 st.subheader("基準のワインを飲んだ印象は？")
-slider_pc1 = st.slider("←もう少し軽やかな感じがいいな 　　/ 　　もう少し濃厚なコクがほしいな→", 0, 100, 50)
-slider_pc2 = st.slider("←こんなに甘みはいらない 　　/ 　　もう少し甘みがほしいな→", 0, 100, 50)
+slider_pc1 = st.slider("←もう少し軽やかな感じがいいな 　　　　　　　　　　　　 　　もう少し濃厚なコクがほしいな→", 0, 100, 50)
+slider_pc2 = st.slider("←こんなに甘みはいらない 　　　　　　　　　　　　 　　もう少し甘みがほしいな→", 0, 100, 50)
 
 # ✅ スライダー値 → PCA空間に変換（中心50→0）
 slider_pc1_val = (slider_pc1 - 50) / 10
