@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib
 
-# ✅ 日本語フォント（Macの場合は "Hiragino Sans" が無難）
+# ✅ 日本語フォント
 matplotlib.rcParams['font.family'] = 'Hiragino Sans'
 
 # ✅ データ読み込み
@@ -61,7 +61,7 @@ umap_df["Type"] = df["Type"] if "Type" in df.columns else "Unknown"
 umap_df["商品名"] = df["商品名"] if "商品名" in df.columns else umap_df["JAN"]
 
 # ✅ Streamlit UI
-st.title("UMAP")
+st.title("UMAP + seaborn.kdeplot版 等高線（改良版）")
 
 # ✅ 等高線 軸選択
 selected_feature = st.selectbox("等高線軸を選択", list(feature_components.keys()))
@@ -74,22 +74,31 @@ if len(components) == 1:
 else:
     umap_df["Z"] = df[components].mean(axis=1).values
 
-# ✅ Plot（Jupyter版と同じ kdeplot 使用）
+# ✅ Plot（Jupyter版と同じ kdeplot 使用） + 改良反映
 fig, ax = plt.subplots(figsize=(10, 8))
 
-# --- 等高線 ---
+# --- 等高線（色合い強調版）
 sns.kdeplot(
     x=umap_df["UMAP1"], y=umap_df["UMAP2"],
     weights=umap_df["Z"],
-    fill=True, cmap="YlOrBr", levels=30, alpha=0.25, bw_adjust=0.7,
+    fill=True, cmap="YlOrBr", levels=50, alpha=0.5, bw_adjust=0.5,
     ax=ax
 )
 
-# --- 散布図 ---
+# --- ワインの打点（小さめに調整）
 sns.scatterplot(
     data=umap_df, x="UMAP1", y="UMAP2",
-    hue="Type", palette="Set2", s=50, edgecolor='k', alpha=0.85,
+    hue="Type", palette="Set2", s=20, edgecolor='k', alpha=0.85,
     ax=ax
+)
+
+# --- 基準ワイン（商品名＝blendF）を特別表示
+blendF_df = umap_df[umap_df["商品名"] == "blendF"]
+
+ax.scatter(
+    blendF_df["UMAP1"], blendF_df["UMAP2"],
+    c='red', s=100, edgecolor='black', linewidth=1.5,
+    label="基準ワイン (blendF)", zorder=5
 )
 
 # --- レイアウト調整 ---
