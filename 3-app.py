@@ -20,8 +20,8 @@ matplotlib.rc('font', family='Arial Unicode MS')
 title_css = """
 <style>
 section.main h1 {
-    font-size: 32px !important;
-    margin-bottom: 10px;
+    font-size: 12px !important;
+    margin-bottom: 5px;
 }
 </style>
 """
