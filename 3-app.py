@@ -21,7 +21,7 @@ title_css = """
 <style>
 h1 {
     font-size: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 </style>
 """
