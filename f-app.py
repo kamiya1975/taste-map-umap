@@ -109,7 +109,7 @@ for i, row in df_sorted.iterrows():
     )
 
 # スライダー位置（ターゲット）マーク
-ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='基準スライダー位置')
+ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='pint')
 
 # 図の設定
 ax.set_xlabel("PC1 + PC2 + PC3")
