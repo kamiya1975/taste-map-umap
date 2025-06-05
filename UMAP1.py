@@ -64,7 +64,7 @@ umap_df["商品名"] = df["商品名"] if "商品名" in df.columns else umap_df
 umap_df["希望小売価格"] = df["希望小売価格"] if "希望小売価格" in df.columns else np.nan
 
 # ✅ Streamlit UI
-st.title("UMAP + 任意商品選択 → 近傍Top10版（range固定版）")
+st.title("UMAP + 任意商品選択 → 近傍Top10版（完全一致版）")
 
 # ✅ 等高線 軸選択
 selected_feature = st.selectbox("等高線軸を選択", list(feature_components.keys()))
@@ -89,6 +89,12 @@ ax.set_title("UMAP")
 ax.set_xlabel("UMAP1")
 ax.set_ylabel("UMAP2")
 ax.grid(True)
+
+# ✅ → ここで matplotlib の「実際の軸range」を取得✨
+x_range = ax.get_xlim()
+y_range = ax.get_ylim()
+
+# ✅ matplotlib プロット表示
 st.pyplot(fig_kde)
 
 # ✅ 近傍探索関数
@@ -114,10 +120,6 @@ st.write(f"選択ワイン: {selected_product} → 座標 ({clicked_x:.2f}, {cli
 
 # ✅ 近傍探索
 nearest_df = compute_nearest(umap_df, clicked_x, clicked_y, top_n=10)
-
-# ✅ 軸range固定 → kdeplotと合わせる
-x_range = [umap_df["UMAP1"].min() - 1, umap_df["UMAP1"].max() + 1]
-y_range = [umap_df["UMAP2"].min() - 1, umap_df["UMAP2"].max() + 1]
 
 # ✅ Plotly scatter作成（Top10表示付き）
 fig_plotly = px.scatter(
@@ -149,10 +151,10 @@ fig_plotly.add_trace(go.Scatter(
     showlegend=False
 ))
 
-# ✅ range固定＋aspect固定（必要なら）
+# ✅ range固定＋aspect固定（完全一致）
 fig_plotly.update_layout(
     xaxis=dict(range=x_range),
-    yaxis=dict(range=y_range, scaleanchor="x", scaleratio=1),  # aspect固定（正方形）
+    yaxis=dict(range=y_range, scaleanchor="x", scaleratio=1),
     title="UMAP",
     xaxis_title="UMAP1",
     yaxis_title="UMAP2",
