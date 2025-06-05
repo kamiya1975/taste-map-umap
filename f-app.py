@@ -55,9 +55,8 @@ PC3 = X_pca[:, 2]
 甘味軸 = (PC2 + PC3) / np.sqrt(2)
 複合ボディ軸 = (PC1 + 甘味軸) / np.sqrt(2)
 
-# ✅ DataFrameに軸追加
-df_clean["BodyAxis"] = PC1 + PC2 + PC3
-df_clean["SweetAxis"] = PC2 + PC3
+df_clean["BodyAxis"] = PC1
+df_clean["SweetAxis"] = PC2
 
 # ✅ Typeごとの色設定
 color_map = {
@@ -83,7 +82,7 @@ df_clean["distance"] = distances
 df_sorted = df_clean.sort_values("distance").head(10)
 
 # ✅ 散布図
-fig, ax = plt.subplots(figsize=(12, 16))
+fig, ax = plt.subplots(figsize=(8, 8))
 
 # Typeごとにプロット
 for wine_type in df_clean["Type"].unique():
@@ -109,7 +108,7 @@ for i, row in df_sorted.iterrows():
     )
 
 # スライダー位置（ターゲット）マーク
-ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='pint')
+ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='point')
 
 # 図の設定
 ax.set_xlabel("PC1 + PC2 + PC3")
@@ -121,6 +120,7 @@ ax.grid(True)
 # グラフ表示
 st.pyplot(fig)
 
-# ✅ 一致度TOP10 表示
 st.subheader("近いワイン")
-st.dataframe(df_sorted[["Type", "JAN", "distance"]].reset_index(drop=True))
+df_sorted_display = df_sorted[["Type", "JAN", "distance"]].reset_index(drop=True)
+df_sorted_display.index += 1
+st.dataframe(df_sorted_display)
