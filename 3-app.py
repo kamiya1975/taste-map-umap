@@ -16,40 +16,29 @@ matplotlib.rcdefaults()
 # ✅ フォント fallback をグローバル設定（GitHubでも安全）
 matplotlib.rc('font', family='Arial Unicode MS')
 
-# ✅ タイトルCSS（改善版）
+# ✅ タイトルCSS（完全版）
 title_css = """
 <style>
-section.main h1 {
-    font-size: 12px !important;
-    margin-bottom: 5px;
+/* Streamlitのタイトル（emotionクラス対応） */
+h1 {
+    font-size: 32px !important;
+    margin-bottom: 10px !important;
 }
 </style>
 """
 st.markdown(title_css, unsafe_allow_html=True)
 
-# ✅ タイトル
-st.title("TasteMAPテスト画面")
-
-# ✅ スライダー赤丸サイズ調整CSS（改善版）
+# ✅ スライダー赤丸 完全対応版
 slider_thumb_css = """
 <style>
-.stSlider > div > div > div > div input[type=range]::-webkit-slider-thumb {
-    height: 32px;
-    width: 32px;
-    background: red;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
-    margin-top: -10px;
-}
-
-.stSlider > div > div > div > div input[type=range]::-moz-range-thumb {
-    height: 32px;
-    width: 32px;
-    background: red;
-    border-radius: 50%;
-    border: none;
-    cursor: pointer;
+/* Streamlitのスライダーは div[role="slider"] を使う */
+div[role="slider"] {
+    height: 32px !important;
+    width: 32px !important;
+    background: red !important;
+    border-radius: 50% !important;
+    border: none !important;
+    cursor: pointer !important;
 }
 </style>
 """
