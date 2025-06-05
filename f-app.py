@@ -19,14 +19,8 @@ matplotlib.rc('font', family='Arial Unicode MS')
 # ✅ Streamlit タイトル
 st.title("TasteMAPテスト画面")
 
-# ✅ データ読み込み（GitHubリポジトリ内の固定ファイルパス）
-try:
-    df = pd.read_csv("Merged_TasteDataDB15.csv")
-    st.success("✅ データ読み込み成功！（GitHub内）")
-    st.write(f"📄 使用ファイル名: Merged_TasteDataDB15.csv")
-except Exception as e:
-    st.error(f"❌ データ読み込み失敗: {e}")
-    st.stop()
+# ✅ データ読み込み
+df = pd.read_csv("Merged_TasteDataDB15.csv")
 
 # ✅ PCA対象の特徴量
 features = [
