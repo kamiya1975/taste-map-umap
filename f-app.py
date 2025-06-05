@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+import matplotlib.font_manager as fm  # ← ★ 追加
 import streamlit as st
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -11,8 +12,12 @@ from scipy.spatial.distance import cdist
 # ✅ rcParams を初期化
 matplotlib.rcdefaults()
 
-# ✅ フォント fallback をグローバル設定（複数 fallback → 1番安全）
-matplotlib.rcParams['font.family'] = ['Noto Sans JP', 'Noto Sans CJK JP', 'IPAexGothic', 'DejaVu Sans']
+# ✅ フォントファイルのパス（相対パス）
+font_path = "fonts/NotoSansCJKjp-Regular.otf"
+font_prop = fm.FontProperties(fname=font_path)
+
+# ✅ フォント名を取得して rcParams にセット
+matplotlib.rcParams['font.family'] = font_prop.get_name()
 
 # ✅ Streamlit タイトル
 st.title("🎈 TasteMAP：PCA合成軸マップ with スライダー一致度")
@@ -100,7 +105,7 @@ for wine_type in df_clean["Type"].unique():
         color=color_map.get(wine_type, "gray")
     )
 
-# ✅ 一致度TOP10 ハイライト（← ここが今回追加）
+# ✅ 一致度TOP10 ハイライト
 for i, row in df_sorted.iterrows():
     ax.scatter(
         row["BodyAxis"], row["SweetAxis"],
