@@ -21,7 +21,7 @@ title_css = """
 <style>
 /* Streamlitのタイトル（emotionクラス対応） */
 h1 {
-    font-size: 32px !important;
+    font-size: 12px !important;
     margin-bottom: 10px !important;
 }
 </style>
