@@ -135,15 +135,15 @@ for wine_type in df_clean["Type"].unique():
         color=color_map.get(wine_type, "gray")
     )
 
-# ✅ 一致度TOP10 ハイライト
-for i, row in df_sorted.iterrows():
+# ✅ 一致度TOP10 ハイライト（順位ラベル表示）
+for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     ax.scatter(
         row["BodyAxis"], row["SweetAxis"],
         color='black', edgecolor='white', s=120, marker='o'
     )
     ax.text(
         row["BodyAxis"] + 0.1, row["SweetAxis"],
-        str(row["JAN"]),
+        str(idx),  # ← 順位表示
         fontsize=9, color='black'
     )
 
@@ -157,8 +157,13 @@ ax.set_title("TasteMAP")
 ax.legend(title="Type")
 ax.grid(True)
 
+# ✅ 軸目盛り（tick）非表示
+ax.set_xticks([])
+ax.set_yticks([])
+
 # ✅ グラフ表示
 st.pyplot(fig)
+
 
 # ✅ 近いワイン TOP10 表示
 st.subheader("近いワイン TOP10")
