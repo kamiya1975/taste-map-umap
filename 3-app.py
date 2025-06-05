@@ -109,8 +109,8 @@ for i, row in df_sorted.iterrows():
 ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='point')
 
 # ✅ 図の設定
-ax.set_xlabel("PCA1（コク）")
-ax.set_ylabel("PCA2（甘味）")
+ax.set_xlabel("Body")
+ax.set_ylabel("Sweet")
 ax.set_title("TasteMAP")
 ax.legend(title="Type")
 ax.grid(True)
