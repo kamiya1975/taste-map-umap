@@ -98,7 +98,7 @@ blendF_df = umap_df[umap_df["商品名"] == "blendF"]
 ax.scatter(
     blendF_df["UMAP1"], blendF_df["UMAP2"],
     c='red', s=100, edgecolor='black', linewidth=1.5,
-    label="基準ワイン (blendF)", zorder=5
+    label="blendF", zorder=5
 )
 
 # --- レイアウト調整 ---
