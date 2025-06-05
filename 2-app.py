@@ -3,9 +3,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-import streamlit as st
-import os
 import matplotlib.font_manager as fm
+import streamlit as st
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import cdist
@@ -14,13 +13,26 @@ from scipy.spatial.distance import cdist
 matplotlib.rcdefaults()
 
 # ✅ フォント fallback をグローバル設定（GitHubでも安全）
-matplotlib.rc('font', family='Arial Unicode MS')
+matplotlib.rc('font', family='Noto Sans CJK JP')
 
 # ✅ Streamlit タイトル
-st.title("TasteMAPテスト画面")
+st.title("🎈 TasteMAP：PCA合成軸マップ with スライダー一致度")
 
-# ✅ データ読み込み
-df = pd.read_csv("Merged_TasteDataDB15.csv")
+# ✅ データ読み込み（GitHubリポジトリ内の固定ファイルパス）
+try:
+    df = pd.read_csv("Merged_TasteDataDB15.csv")
+    st.success("✅ データ読み込み成功！（GitHub内）")
+    st.write(f"📄 使用ファイル名: Merged_TasteDataDB15.csv")
+except Exception as e:
+    st.error(f"❌ データ読み込みエラー: {e}")
+    st.stop()
+
+# ✅ 対象のJANコード
+target_jans = [
+    "4935919319140", "4935919080316", "4935919058186", "850832004260", "4935919071604",
+    "4935919193559", "4935919197175", "4935919052504", "4935919080378", "blendF",
+    "4935919213578", "4935919961554", "4935919194624", "4935919080965",
+]
 
 # ✅ 使用する成分
 features = [
@@ -52,9 +64,12 @@ X_pca = pca.fit_transform(X_scaled)
 PC1 = X_pca[:, 0]
 PC2 = X_pca[:, 1]
 PC3 = X_pca[:, 2]
+甘味軸 = (PC2 + PC3) / np.sqrt(2)
+複合ボディ軸 = (PC1 + 甘味軸) / np.sqrt(2)
 
-df_clean["BodyAxis"] = PC1
-df_clean["SweetAxis"] = PC2
+# ✅ DataFrameに軸追加
+df_clean["BodyAxis"] = 複合ボディ軸
+df_clean["SweetAxis"] = 甘味軸
 
 # ✅ Typeごとの色設定
 color_map = {
@@ -63,24 +78,17 @@ color_map = {
 }
 
 # ✅ スライダー（PC1, PC2）
-st.subheader("基準のワインを飲んだ印象は？")
-slider_pc2 = st.slider("←　こんなに甘みはいらない 　　　　　　　　　　　　 　　　　　　　　　　　　もう少し甘みがほしいな　→", 0, 100, 50)
-slider_pc1 = st.slider("←　もう少し軽やかな感じがいいな 　　　　　　　　　　　　 　　　　　　もう少し濃厚なコクがほしいな　→", 0, 100, 50)
+st.markdown("#### 🔍 基準ワインの印象調整（スライダー）")
+slider_pc1 = st.slider("← PC1（軽やか） / PC1（濃厚） →", 0, 100, 50)
+slider_pc2 = st.slider("← PC2（甘さ控えめ） / PC2（甘さ強め） →", 0, 100, 50)
 
 # ✅ スライダー → マップ座標（スケーリング）
 # PCAのスケールを約±3想定
 target_x = (slider_pc1 - 50) / 50 * 3
 target_y = (slider_pc2 - 50) / 50 * 3
 
-# ✅ 一致度計算
-target_xy = np.array([[target_x, target_y]])
-all_xy = df_clean[["BodyAxis", "SweetAxis"]].values
-distances = cdist(target_xy, all_xy).flatten()
-df_clean["distance"] = distances
-df_sorted = df_clean.sort_values("distance").head(10)
-
 # ✅ 散布図
-fig, ax = plt.subplots(figsize=(8, 8))
+fig, ax = plt.subplots(figsize=(16, 12))
 
 # Typeごとにプロット
 for wine_type in df_clean["Type"].unique():
@@ -93,33 +101,39 @@ for wine_type in df_clean["Type"].unique():
         color=color_map.get(wine_type, "gray")
     )
 
-# ✅ 一致度TOP10 ハイライト
-for i, row in df_sorted.iterrows():
-    ax.scatter(
-        row["BodyAxis"], row["SweetAxis"],
-        color='black', edgecolor='white', s=120, marker='o'
-    )
-    ax.text(
-        row["BodyAxis"] + 0.1, row["SweetAxis"],
-        str(row["JAN"]),
-        fontsize=9, color='black'
-    )
+# JANコードハイライト
+for i, row in df_clean.iterrows():
+    if str(row["JAN"]) in target_jans:
+        ax.scatter(
+            row["BodyAxis"], row["SweetAxis"],
+            color='black', edgecolor='white', s=100, marker='o'
+        )
+        ax.text(
+            row["BodyAxis"] + 0.1, row["SweetAxis"],
+            str(row["商品名"]),
+            fontsize=8, color='black'
+        )
 
-# ✅ スライダー位置（ターゲット）マーク
-ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='point')
+# スライダー位置（ターゲット）マーク
+ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='基準スライダー位置')
 
-# ✅ 図の設定
-ax.set_xlabel("PCA1（コク）")
-ax.set_ylabel("PCA2（甘味）")
-ax.set_title("TasteMAP")
+# 図の設定
+ax.set_xlabel("複合ボディ軸（PC1 & 甘味軸）")
+ax.set_ylabel("甘味軸（PC2 + PC3）")
+ax.set_title("散布図②：複合ボディ軸 vs 甘味軸")
 ax.legend(title="Type")
 ax.grid(True)
 
-# ✅ グラフ表示
+# グラフ表示
 st.pyplot(fig)
 
-# ✅ 近いワイン TOP10 表示
-st.subheader("近いワイン TOP10")
-df_sorted_display = df_sorted[["Type", "JAN", "distance"]].reset_index(drop=True)
-df_sorted_display.index += 1
-st.dataframe(df_sorted_display)
+# ✅ 一致度計算
+target_xy = np.array([[target_x, target_y]])
+all_xy = df_clean[["BodyAxis", "SweetAxis"]].values
+distances = cdist(target_xy, all_xy).flatten()
+df_clean["distance"] = distances
+df_sorted = df_clean.sort_values("distance").head(10)
+
+# ✅ 一致度TOP10 表示
+st.subheader("📋 近いワイン TOP10")
+st.dataframe(df_sorted[["Type", "商品名", "distance"]].reset_index(drop=True))
