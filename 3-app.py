@@ -170,8 +170,11 @@ ax.set_yticks([])
 # ✅ グラフ表示
 st.pyplot(fig)
 
-# ✅ 近いワイン TOP10 表示
+# ✅ 近いワイン TOP10 表示（静的テーブル版）
 st.subheader("近いワイン TOP10")
 df_sorted_display = df_sorted[["Type", "商品名", "希望小売価格"]].reset_index(drop=True)
 df_sorted_display.index += 1
-st.dataframe(df_sorted_display)
+
+# ✅ 静的表示に変更（プルダウンを消す）
+st.table(df_sorted_display)
+
