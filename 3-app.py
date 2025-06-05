@@ -103,8 +103,8 @@ color_map = {
 
 # ✅ スライダー（PC1, PC2）
 st.subheader("基準のワインを飲んだ印象は？")
-slider_pc2 = st.slider("←　こんなに甘みはいらない 　　　　　　　　　　　　 　　　　　　　　　　　　もう少し甘みがほしいな　→", 0, 100, 50)
 slider_pc1 = st.slider("←　もう少し軽やかな感じがいいな 　　　　　　　　　　　　 　　　　　　もう少し濃厚なコクがほしいな　→", 0, 100, 50)
+slider_pc2 = st.slider("←　こんなに甘みはいらない 　　　　　　　　　　　　 　　　　　　　　　　　　もう少し甘みがほしいな　→", 0, 100, 50)
 
 # ✅ PCA軸の min/max を取得
 x_min, x_max = df_clean["BodyAxis"].min(), df_clean["BodyAxis"].max()
