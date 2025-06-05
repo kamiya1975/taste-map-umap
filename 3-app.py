@@ -142,7 +142,7 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     # 黒丸
     ax.scatter(
         row["BodyAxis"], row["SweetAxis"],
-        color='black', edgecolor='white', s=120, marker='o'
+        color='black', edgecolor='white', s=240, marker='o'
     )
     # 順位番号 → 白文字・中央
     ax.text(
