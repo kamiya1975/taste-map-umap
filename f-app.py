@@ -56,8 +56,8 @@ PC3 = X_pca[:, 2]
 複合ボディ軸 = (PC1 + 甘味軸) / np.sqrt(2)
 
 # ✅ DataFrameに軸追加
-df_clean["BodyAxis"] = 複合ボディ軸
-df_clean["SweetAxis"] = 甘味軸
+df_clean["BodyAxis"] = PC1 + PC2 + PC3
+df_clean["SweetAxis"] = PC2 + PC3
 
 # ✅ Typeごとの色設定
 color_map = {
@@ -112,9 +112,9 @@ for i, row in df_sorted.iterrows():
 ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='基準スライダー位置')
 
 # 図の設定
-ax.set_xlabel("複合ボディ軸（PC1 & 甘味軸）")
-ax.set_ylabel("甘味軸（PC2 + PC3）")
-ax.set_title("散布図②：複合ボディ軸 vs 甘味軸")
+ax.set_xlabel("PC1 + PC2 + PC3")
+ax.set_ylabel("PC2 + PC3")
+ax.set_title("TasteMAP")
 ax.legend(title="Type")
 ax.grid(True)
 
@@ -122,5 +122,5 @@ ax.grid(True)
 st.pyplot(fig)
 
 # ✅ 一致度TOP10 表示
-st.subheader("📋 近いワイン TOP10")
+st.subheader("近いワイン")
 st.dataframe(df_sorted[["Type", "JAN", "distance"]].reset_index(drop=True))
