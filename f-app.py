@@ -14,7 +14,7 @@ from scipy.spatial.distance import cdist
 matplotlib.rcdefaults()
 
 # ✅ フォント fallback をグローバル設定（GitHubでも安全）
-matplotlib.rc('font', family='Arial Unicode MS)
+matplotlib.rc('font', family='Arial Unicode MS')
 
 # ✅ Streamlit タイトル
 st.title("📍 TasteMAP：PCA合成軸マップ with スライダー一致度")
