@@ -175,14 +175,6 @@ st.subheader("近いワイン TOP10")
 df_sorted_display = df_sorted[["Type", "商品名", "希望小売価格"]].reset_index(drop=True)
 df_sorted_display.index += 1
 
-# ✅ Type列 → マーク付きに変換
-type_markers = {
-    "Red": "🔴",
-    "White": "🟡",
-    "Spa": "🔵",
-    "Rose": "🟣",
-}
-
 # ✅ 希望小売価格 → 整形（例: 1,600 円）
 df_sorted_display["希望小売価格"] = df_sorted_display["希望小売価格"].apply(lambda x: f"{int(x):,} 円")
 
