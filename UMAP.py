@@ -3,11 +3,11 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from sklearn.impute import KNNImputer
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import umap
 import plotly.graph_objects as go
-from scipy.interpolate import griddata  # ✅ 補間用ライブラリ
+from scipy.interpolate import griddata
 
 # ✅ データ読み込み
 df = pd.read_csv("Merged_TasteDataDB15.csv")
@@ -64,26 +64,25 @@ st.title("UMAP")
 # ✅ 等高線 軸選択
 selected_feature = st.selectbox("等高線軸を選択", list(feature_components.keys()))
 
-# ✅ 合成Z軸
+# ✅ 合成Z軸 → sum → meanに修正！（ここが大事）
 components = feature_components[selected_feature]
-z_combined = df[components].sum(axis=1).values
-umap_df["Z"] = z_combined
-
-# ✅ Z軸スケーリング（MinMaxScaler推奨）
-scaler = MinMaxScaler()
-umap_df["Z_scaled"] = scaler.fit_transform(umap_df[["Z"]])
+if len(components) == 1:
+    z_var = components[0]
+    umap_df["Z"] = df[z_var].astype(float)
+else:
+    umap_df["Z"] = df[components].mean(axis=1).values
 
 # ✅ grid化（補間用 meshgrid 作成）
 xi = np.linspace(umap_df["UMAP1"].min(), umap_df["UMAP1"].max(), 100)
 yi = np.linspace(umap_df["UMAP2"].min(), umap_df["UMAP2"].max(), 100)
 xi, yi = np.meshgrid(xi, yi)
 
-# ✅ griddata 補間
+# ✅ griddata 補間（Zはスケーリングしない → 差が出やすくなる）
 zi = griddata(
     (umap_df["UMAP1"], umap_df["UMAP2"]),
-    umap_df["Z_scaled"],
+    umap_df["Z"],
     (xi, yi),
-    method='cubic'  # 'linear' でもOK（安定性高め）
+    method='cubic'
 )
 
 # ✅ Plotly図
@@ -104,7 +103,7 @@ fig.add_trace(go.Contour(
     z=zi,             # 補間された z
     colorscale='YlOrBr',
     opacity=0.3,
-    showscale=False,
+    showscale=True,   # ← 一旦scale出すと違いが分かりやすい（デバッグ用に）
     contours=dict(coloring='heatmap', showlines=False)
 ))
 
