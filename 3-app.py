@@ -16,11 +16,11 @@ matplotlib.rcdefaults()
 # ✅ フォント fallback をグローバル設定（GitHubでも安全）
 matplotlib.rc('font', family='Arial Unicode MS')
 
-# ✅ タイトルCSS（文字サイズ調整）
+# ✅ タイトルCSS（改善版）
 title_css = """
 <style>
-h1 {
-    font-size: 12px;
+section.main h1 {
+    font-size: 32px !important;
     margin-bottom: 10px;
 }
 </style>
@@ -30,12 +30,12 @@ st.markdown(title_css, unsafe_allow_html=True)
 # ✅ タイトル
 st.title("TasteMAPテスト画面")
 
-# ✅ スライダー赤丸サイズ調整CSS
+# ✅ スライダー赤丸サイズ調整CSS（改善版）
 slider_thumb_css = """
 <style>
-input[type=range]::-webkit-slider-thumb {
-    height: 48px;
-    width: 48px;
+.stSlider > div > div > div > div input[type=range]::-webkit-slider-thumb {
+    height: 32px;
+    width: 32px;
     background: red;
     border-radius: 50%;
     border: none;
@@ -43,9 +43,9 @@ input[type=range]::-webkit-slider-thumb {
     margin-top: -10px;
 }
 
-input[type=range]::-moz-range-thumb {
-    height: 48px;
-    width: 48px;
+.stSlider > div > div > div > div input[type=range]::-moz-range-thumb {
+    height: 32px;
+    width: 32px;
     background: red;
     border-radius: 50%;
     border: none;
@@ -54,6 +54,7 @@ input[type=range]::-moz-range-thumb {
 </style>
 """
 st.markdown(slider_thumb_css, unsafe_allow_html=True)
+
 
 # ✅ スライダー数値非表示CSS
 hide_slider_value_css = """
