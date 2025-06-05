@@ -3,8 +3,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-import matplotlib.font_manager as fm  # ← ★ 追加
 import streamlit as st
+import os
+import matplotlib.font_manager as fm
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import cdist
@@ -12,15 +13,13 @@ from scipy.spatial.distance import cdist
 # ✅ rcParams を初期化
 matplotlib.rcdefaults()
 
-# ✅ フォントファイルのパス（相対パス）
-font_path = "fonts/NotoSansCJKjp-Regular.otf"
+# ✅ フォント fallback をグローバル設定（安全版 ✅）
+font_path = os.path.join(os.path.dirname(__file__), "fonts", "NotoSansCJKjp-Regular.otf")
 font_prop = fm.FontProperties(fname=font_path)
-
-# ✅ フォント名を取得して rcParams にセット
 matplotlib.rcParams['font.family'] = font_prop.get_name()
 
 # ✅ Streamlit タイトル
-st.title("🎈 TasteMAP：PCA合成軸マップ with スライダー一致度")
+st.title("📍 TasteMAP：PCA合成軸マップ with スライダー一致度")
 
 # ✅ データ読み込み（GitHubリポジトリ内の固定ファイルパス）
 try:
@@ -28,108 +27,86 @@ try:
     st.success("✅ データ読み込み成功！（GitHub内）")
     st.write(f"📄 使用ファイル名: Merged_TasteDataDB15.csv")
 except Exception as e:
-    st.error(f"❌ データ読み込みエラー: {e}")
+    st.error(f"❌ データ読み込み失敗: {e}")
     st.stop()
 
-# ✅ 使用する成分
+# ✅ PCA対象の特徴量
 features = [
-    "20mm_L*", "20mm_a*", "20mm_b*",
-    "Ethyl acetate", "Propanol", "2-Methylbutyl acetate", "Ethyl lactate", "Acetic acid",
-    "Furfural", "2-Acetylfuran", "2-Nonanol", "Propanoic acid", "2,3-Butanediol isomer-1",
-    "Isobutyric acid", "2,3-Butanediol isomer-2", "gamma-Butyrolactone", "Butyric acid",
-    "Furfuryl alcohol", "Isovaleric acid", "2-Methyl butyric acid", "Diethyl succinate",
-    "Methionol", "Cyclotene", "2-Phenylethyl acetate", "3-Mercapto-1-hexanol",
-    "Capronic acid", "Guaiacol", "1-Undecanol", "Benzyl alcohol", "2-Phenylethanol",
-    "Maltol", "2-Acetylpyrrole", "Phenol", "Furaneol", "gamma-Nonalactone",
-    "Pantolactone", "Diethyl malate", "Caprylic acid", "p-Cresol", "4-Ethylphenol",
-    "3-Ethylphenol", "p-Vinylguaiacol", "2,6-Dimethoxyphenol", "Benzoic acid",
-    "エタノール", "ブドウ糖", "果糖", "滴定酸度7.0",
-    "揮発性酸", "リンゴ酸", "乳酸", "酒石酸", "エキス", "pH", "グリセリン",
-    "グルコン酸", "総ポリフェノール"
+    "20mm_L*", "20mm_a*", "20mm_b*", "Ethyl acetate", "Propanol",
+    "2-Methylbutyl acetate", "Ethyl lactate", "Acetic acid", "Furfural",
+    "2-Acetylfuran", "2-Nonanol", "Propanoic acid", "2,3-Butanediol isomer-1",
+    "Isobutyric acid", "2,3-Butanediol isomer-2", "gamma-Butyrolactone",
+    "Butyric acid", "Furfuryl alcohol", "Isovaleric acid", "2-Methyl butyric acid",
+    "Diethyl succinate", "Methionol", "Cyclotene", "2-Phenylethyl acetate",
+    "3-Mercapto-1-hexanol", "Capronic acid", "Guaiacol", "1-Undecanol",
+    "Benzyl alcohol", "2-Phenylethanol", "Maltol", "2-Acetylpyrrole"
 ]
 
-# ✅ 欠損除外
-df_clean = df.dropna(subset=features + ["Type", "JAN", "商品名"]).reset_index(drop=True)
-
-# ✅ PCA（3成分）
+# ✅ 前処理
+df_pca = df.dropna(subset=features)
+X = df_pca[features].values
 scaler = StandardScaler()
-X_scaled = scaler.fit_transform(df_clean[features])
-pca = PCA(n_components=3)
+X_scaled = scaler.fit_transform(X)
+
+# ✅ PCA
+pca = PCA(n_components=2)
 X_pca = pca.fit_transform(X_scaled)
 
-# ✅ 各軸の構成
-PC1 = X_pca[:, 0]
-PC2 = X_pca[:, 1]
-PC3 = X_pca[:, 2]
-甘味軸 = (PC2 + PC3) / np.sqrt(2)
-複合ボディ軸 = (PC1 + 甘味軸) / np.sqrt(2)
-
-# ✅ DataFrameに軸追加
-df_clean["BodyAxis"] = 複合ボディ軸
-df_clean["SweetAxis"] = 甘味軸
-
-# ✅ Typeごとの色設定
-color_map = {
-    "Spa": "blue", "White": "gold", "Red": "red", "Rose": "pink",
-    "ロゼ": "pink", "スパークリング": "blue", "白": "gold", "赤": "red"
-}
-
 # ✅ スライダー（PC1, PC2）
-st.markdown("#### 🔍 基準ワインの印象調整（スライダー）")
+st.subheader("🔍 基準ワインの印象調整（スライダー）")
 slider_pc1 = st.slider("← PC1（軽やか） / PC1（濃厚） →", 0, 100, 50)
 slider_pc2 = st.slider("← PC2（甘さ控えめ） / PC2（甘さ強め） →", 0, 100, 50)
 
-# ✅ スライダー → マップ座標（スケーリング）
-# PCAのスケールを約±3想定
-target_x = (slider_pc1 - 50) / 50 * 3
-target_y = (slider_pc2 - 50) / 50 * 3
+# ✅ スライダー値 → PCA空間に変換（中心50→0）
+slider_pc1_val = (slider_pc1 - 50) / 10
+slider_pc2_val = (slider_pc2 - 50) / 10
+target_point = np.array([[slider_pc1_val, slider_pc2_val]])
 
-# ✅ 一致度計算
-target_xy = np.array([[target_x, target_y]])
-all_xy = df_clean[["BodyAxis", "SweetAxis"]].values
-distances = cdist(target_xy, all_xy).flatten()
-df_clean["distance"] = distances
-df_sorted = df_clean.sort_values("distance").head(10)
+# ✅ 距離計算（ユークリッド距離）
+distances = cdist(target_point, X_pca)[0]
+df_pca["Distance"] = distances
+df_top10 = df_pca.nsmallest(10, "Distance")
 
 # ✅ 散布図
-fig, ax = plt.subplots(figsize=(16, 12))
+fig, ax = plt.subplots(figsize=(8, 8))
 
-# Typeごとにプロット
-for wine_type in df_clean["Type"].unique():
-    mask = df_clean["Type"] == wine_type
+color_map = {
+    "White": "gold",
+    "Red": "red",
+    "Rose": "pink",
+    "Spa": "blue"
+}
+
+for wine_type in df_pca["Type"].unique():
+    mask = df_pca["Type"] == wine_type
     ax.scatter(
-        df_clean.loc[mask, "BodyAxis"],
-        df_clean.loc[mask, "SweetAxis"],
+        X_pca[mask, 0],
+        X_pca[mask, 1],
         label=wine_type,
-        alpha=0.6,
-        color=color_map.get(wine_type, "gray")
+        color=color_map.get(wine_type, "gray"),
+        alpha=0.6
     )
 
-# ✅ 一致度TOP10 ハイライト
-for i, row in df_sorted.iterrows():
-    ax.scatter(
-        row["BodyAxis"], row["SweetAxis"],
-        color='black', edgecolor='white', s=120, marker='o'
-    )
-    ax.text(
-        row["BodyAxis"] + 0.1, row["SweetAxis"],
-        str(row["商品名"]),
-        fontsize=9, color='black'
-    )
+# ✅ 基準ワイン位置
+ax.scatter(
+    slider_pc1_val,
+    slider_pc2_val,
+    color="black",
+    s=200,
+    edgecolor="white",
+    linewidth=2,
+    label="基準ワイン"
+)
 
-# スライダー位置（ターゲット）マーク
-ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='基準スライダー位置')
-
-# 図の設定
-ax.set_xlabel("複合ボディ軸（PC1 & 甘味軸）")
-ax.set_ylabel("甘味軸（PC2 + PC3）")
-ax.set_title("散布図②：複合ボディ軸 vs 甘味軸")
-ax.legend(title="Type")
+# ✅ ラベル・凡例
+ax.set_xlabel("🟥 PCA軸1（軽やか ←→ 濃厚）")
+ax.set_ylabel("🟦 PCA軸2（甘さ控えめ ←→ 甘さ強め）")
+ax.legend()
 ax.grid(True)
 
-# グラフ表示
+# ✅ 表示
 st.pyplot(fig)
 
-# ✅ 一致度TOP10 表示
+# ✅ 近いワイン TOP10 表示
 st.subheader("📋 近いワイン TOP10")
-st.dataframe(df_sorted[["Type", "商品名", "distance"]].reset_index(drop=True))
+st.dataframe(df_top10[["JAN", "ProductName", "Type", "Distance"]].reset_index(drop=True))
