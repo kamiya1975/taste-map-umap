@@ -64,7 +64,7 @@ umap_df["商品名"] = df["商品名"] if "商品名" in df.columns else umap_df
 umap_df["希望小売価格"] = df["希望小売価格"] if "希望小売価格" in df.columns else np.nan
 
 # ✅ Streamlit UI
-st.title("UMAP + blendF近傍Top10版")
+st.title("UMAP + 任意商品選択 → 近傍Top10版")
 
 # ✅ 等高線 軸選択
 selected_feature = st.selectbox("等高線軸を選択", list(feature_components.keys()))
@@ -99,15 +99,21 @@ def compute_nearest(df, target_x, target_y, top_n=10):
     df_sorted["順位"] = df_sorted.index + 1
     return df_sorted.head(top_n)
 
-# ✅ blendF座標取得
-blendF_row = umap_df[umap_df["商品名"] == "blendF"].iloc[0]
-blendF_x = blendF_row["UMAP1"]
-blendF_y = blendF_row["UMAP2"]
+# ✅ 商品選択UI
+selected_product = st.selectbox(
+    "基準とするワインを選んでください",
+    umap_df["商品名"].unique()
+)
 
-st.write(f"基準ワイン: blendF → 座標 ({blendF_x:.2f}, {blendF_y:.2f})")
+# ✅ 選択商品座標
+selected_row = umap_df[umap_df["商品名"] == selected_product].iloc[0]
+clicked_x = selected_row["UMAP1"]
+clicked_y = selected_row["UMAP2"]
+
+st.write(f"選択ワイン: {selected_product} → 座標 ({clicked_x:.2f}, {clicked_y:.2f})")
 
 # ✅ 近傍探索
-nearest_df = compute_nearest(umap_df, blendF_x, blendF_y, top_n=10)
+nearest_df = compute_nearest(umap_df, clicked_x, clicked_y, top_n=10)
 
 # ✅ Plotly scatter作成（Top10表示付き）
 fig_plotly = px.scatter(
@@ -119,14 +125,14 @@ fig_plotly = px.scatter(
     size=np.full(len(umap_df), 6),
 )
 
-# ✅ blendF赤丸追加
+# ✅ 選択商品（赤丸）追加
 fig_plotly.add_trace(go.Scatter(
-    x=[blendF_x],
-    y=[blendF_y],
+    x=[clicked_x],
+    y=[clicked_y],
     mode='markers',
     marker=dict(size=15, color='red', line=dict(width=2, color='black')),
-    name="blendF",
-    hovertext="blendF"
+    name=selected_product,
+    hovertext=selected_product
 ))
 
 # ✅ Top10順位番号追加
@@ -143,5 +149,6 @@ fig_plotly.add_trace(go.Scatter(
 st.plotly_chart(fig_plotly, use_container_width=True)
 
 # ✅ 下に表表示
-st.subheader("blendFに近いワイン Top10")
+st.subheader("近いワイン Top10")
 st.dataframe(nearest_df[["順位", "JAN", "希望小売価格", "商品名"]])
+
