@@ -17,7 +17,7 @@ matplotlib.rcdefaults()
 matplotlib.rc('font', family='Arial Unicode MS')
 
 # ✅ Streamlit タイトル
-st.title("📍 TasteMAP：PCA合成軸マップ with スライダー一致度")
+st.title("TasteMAPテスト画面")
 
 # ✅ データ読み込み（GitHubリポジトリ内の固定ファイルパス）
 try:
