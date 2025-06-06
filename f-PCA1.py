@@ -337,12 +337,12 @@ view_state = pdk.ViewState(
     pitch=0
 )
 
-# ✅ DeckGL map（背景真っ白 & OrthographicView → 正しい版！）
+# ✅ DeckGL map（背景真っ白 & Orthographic → 互換性高い版！）
 deck_map = pdk.Deck(
     layers=[scatter_layer],
     initial_view_state=view_state,
     map_style=None,
-    views=pdk.OrthographicView(),  # ★ 正しい OrthographicView 設定
+    parameters={"projection": "ORTHOGRAPHIC"},  # ← これがポイント！
     controller=True
 )
 
