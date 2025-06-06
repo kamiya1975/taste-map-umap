@@ -197,10 +197,11 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     
     with col3:
         if st.button("反映", key=f"reflect_{jan}"):
-            # ▶️ 評価を保存
-            st.session_state.user_ratings_dict[jan] = rating
-            # ✅ ここで強制リラン！（1回押すだけでマップ更新OK）
-            st.experimental_rerun()
+    # ▶️ 評価を保存
+    st.session_state.user_ratings_dict[jan] = rating
+    # ✅ ここ！ 最新版はこれ ↓
+    st.rerun()
+
     
     # 区切り線
     st.markdown("---")
