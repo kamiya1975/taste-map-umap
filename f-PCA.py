@@ -4,8 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 import streamlit as st
-import os
-import matplotlib.font_manager as fm
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import cdist
@@ -14,46 +12,10 @@ from scipy.spatial.distance import cdist
 matplotlib.rcdefaults()
 matplotlib.rc('font', family='Arial Unicode MS')
 
-# ✅ タイトルCSS
-title_css = """
-<style>
-h1 {
-    font-size: 32px !important;
-    margin-bottom: 10px !important;
-}
-</style>
-"""
-st.markdown(title_css, unsafe_allow_html=True)
-
-# ✅ スライダー赤丸 CSS
-slider_thumb_css = """
-<style>
-div[role="slider"] {
-    height: 32px !important;
-    width: 32px !important;
-    background: red !important;
-    border-radius: 50% !important;
-    border: none !important;
-    cursor: pointer !important;
-}
-</style>
-"""
-st.markdown(slider_thumb_css, unsafe_allow_html=True)
-
-# ✅ スライダー数値 非表示
-hide_slider_value_css = """
-<style>
-.css-1t42p7b .e1f1d6gn2 {
-    display: none;
-}
-</style>
-"""
-st.markdown(hide_slider_value_css, unsafe_allow_html=True)
-
 # ✅ データ読み込み
 df = pd.read_csv("Merged_TasteDataDB15.csv")
 
-# ✅ 使用する成分
+# ✅ 使用成分
 features = [
     "20mm_L*", "20mm_a*", "20mm_b*",
     "Ethyl acetate", "Propanol", "2-Methylbutyl acetate", "Ethyl lactate", "Acetic acid",
@@ -90,34 +52,49 @@ PC3 = X_pca[:, 2]
 df_clean["BodyAxis"] = 複合ボディ軸
 df_clean["SweetAxis"] = 甘味軸
 
-# ✅ 色設定＋凡例順
-legend_order = ["Spa", "White", "Red", "Rose", "Entry Wine"]
-color_map_fixed = {
+# ✅ 色設定
+color_map = {
     "Spa": "blue", "White": "gold", "Red": "red", "Rose": "pink", "Entry Wine": "green"
 }
+legend_order = ["Spa", "White", "Red", "Rose", "Entry Wine"]
 
-# ✅ Entry Wine の座標取得
+# ✅ blendF の位置取得
 blendF_row = df_clean[df_clean["JAN"] == "blendF"].iloc[0]
 blendF_x = blendF_row["BodyAxis"]
 blendF_y = blendF_row["SweetAxis"]
 
-# ✅ スライダー
-st.subheader("基準のワインを飲んだ印象は？")
-slider_pc2 = st.slider("← こんなに甘みはいらない　　　　　　もう少し甘みがほしいな →", 0, 100, 50)
-slider_pc1 = st.slider("← もう少し軽やかな感じがいいな　　　　もう少し濃厚なコクがほしいな →", 0, 100, 50)
-
-# ✅ 軸スケール
+# ✅ 軸の min/max
 x_min, x_max = df_clean["BodyAxis"].min(), df_clean["BodyAxis"].max()
 y_min, y_max = df_clean["SweetAxis"].min(), df_clean["SweetAxis"].max()
 
-# ✅ スライダー → MAP座標（blendF起点）
-target_x = blendF_x + ((slider_pc1 - 50) / 50) * (x_max - x_min) / 2
-target_y = blendF_y + ((slider_pc2 - 50) / 50) * (y_max - y_min) / 2
+# ✅ Entry Wine からの距離
+range_left_x  = blendF_x - x_min
+range_right_x = x_max - blendF_x
+range_down_y  = blendF_y - y_min
+range_up_y    = y_max - blendF_y
+
+# ✅ スライダー
+st.subheader("基準のワインを飲んだ印象は？")
+slider_pc2 = st.slider("← 甘さ控えめ　　　　　　甘さ強め →", 0, 100, 50)
+slider_pc1 = st.slider("← 軽やか　　　　　　濃厚 →", 0, 100, 50)
+
+# ✅ スライダー → MAP座標変換
+# BodyAxis
+if slider_pc1 <= 50:
+    target_x = blendF_x - ((50 - slider_pc1) / 50) * range_left_x
+else:
+    target_x = blendF_x + ((slider_pc1 - 50) / 50) * range_right_x
+
+# SweetAxis
+if slider_pc2 <= 50:
+    target_y = blendF_y - ((50 - slider_pc2) / 50) * range_down_y
+else:
+    target_y = blendF_y + ((slider_pc2 - 50) / 50) * range_up_y
 
 # ✅ blendF 除外
 df_search = df_clean[df_clean["JAN"] != "blendF"].copy()
 
-# ✅ 一致度
+# ✅ 一致度計算
 target_xy = np.array([[target_x, target_y]])
 all_xy = df_search[["BodyAxis", "SweetAxis"]].values
 distances = cdist(target_xy, all_xy).flatten()
@@ -127,7 +104,7 @@ df_sorted = df_search.sort_values("distance").head(10)
 # ✅ 散布図
 fig, ax = plt.subplots(figsize=(8, 8))
 
-# Type別ワイン打点
+# ワイン点
 for wine_type in legend_order:
     mask = df_clean["Type"] == wine_type
     if mask.sum() > 0:
@@ -136,50 +113,50 @@ for wine_type in legend_order:
             df_clean.loc[mask, "SweetAxis"],
             label=wine_type,
             alpha=0.6,
-            color=color_map_fixed.get(wine_type, "gray"),
+            color=color_map.get(wine_type, "gray"),
             s=20
         )
 
-# TOP10 ハイライト
+# ✅ TOP10 ハイライト
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     ax.scatter(row["BodyAxis"], row["SweetAxis"],
                color='black', edgecolor='white', s=240, marker='o')
     ax.text(row["BodyAxis"], row["SweetAxis"], str(idx),
             fontsize=9, color='white', ha='center', va='center')
 
-# Entry Wine 固定マーク
-ax.scatter(blendF_x, blendF_y, color='green', s=200, marker='X', label='Entry Wine')
+# ✅ ユーザー印象 (緑X)
+ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='Your Impression')
 
-# スライダー位置マーク
-ax.scatter(target_x, target_y, color='green', s=200, marker='X')
-
-# 図設定
-ax.set_xlabel("-  Body  +")
-ax.set_ylabel("-  Sweet  +")
-ax.set_title("TasteMAP")
-
-# 凡例
+# ✅ 凡例
 handles, labels = ax.get_legend_handles_labels()
 sorted_handles_labels = [
     (h, l) for l in legend_order for h, lbl in zip(handles, labels) if lbl == l
 ]
+# + User Impression
+sorted_handles_labels.append((ax.scatter([], [], color='green', s=200, marker='X'), 'Your Impression'))
+
 if sorted_handles_labels:
     sorted_handles, sorted_labels = zip(*sorted_handles_labels)
     ax.legend(sorted_handles, sorted_labels, title="Type")
 
+# ✅ 軸設定
+ax.set_xlabel("-  Body  +")
+ax.set_ylabel("-  Sweet  +")
+ax.set_title("TasteMAP")
 ax.grid(True)
 ax.set_xticks([])
 ax.set_yticks([])
 
-# グラフ
+# ✅ 表示
 st.pyplot(fig)
 
-# ✅ TOP10 評価 UI
 st.subheader("近いワイン TOP10（評価つき）")
 
+# user_ratings_dict の初期化（もしなければ）
 if "user_ratings_dict" not in st.session_state:
     st.session_state.user_ratings_dict = {}
 
+# ★評価 options
 rating_options = ["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"]
 
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
