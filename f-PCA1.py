@@ -302,3 +302,47 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
             st.rerun()
 
     st.markdown("---")
+
+# ✅ 必要ライブラリ
+import pydeck as pdk
+
+# ✅ DeckGL 用データ準備（PCA複合軸）
+df_deck = df_clean.copy()
+df_deck["x"] = df_deck["BodyAxis"]
+df_deck["y"] = df_deck["SweetAxis"]
+
+# ✅ Scatterplot Layer（シンプル版）
+scatter_layer = pdk.Layer(
+    "ScatterplotLayer",
+    data=df_deck,
+    get_position="[x, y]",
+    get_fill_color="[0, 128, 255, 160]",  # 青
+    get_radius=50,  # 半径
+    pickable=True,
+    auto_highlight=True
+)
+
+# ✅ Viewport セッティング（中央・ズーム）
+x_center = (x_min + x_max) / 2
+y_center = (y_min + y_max) / 2
+zoom_level = 2
+
+view_state = pdk.ViewState(
+    longitude=x_center,
+    latitude=y_center,
+    zoom=zoom_level,
+    min_zoom=1,
+    max_zoom=10,
+    bearing=0,
+    pitch=0
+)
+
+# ✅ DeckGL map
+deck_map = pdk.Deck(
+    layers=[scatter_layer],
+    initial_view_state=view_state,
+    map_style=None  # 背景は None（PCA 軸なので）
+)
+
+# ✅ 表示
+st.pydeck_chart(deck_map)
