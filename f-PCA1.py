@@ -248,11 +248,6 @@ fig.update_yaxes(
 # ✅ 表示（インタラクティブ！）
 st.plotly_chart(fig, use_container_width=True)
 
-
-# ✅ 表示（インタラクティブ！）
-st.plotly_chart(fig, use_container_width=True)
-
-
 # ✅ TOP10（評価つき）
 st.subheader("近いワイン TOP10（評価つき）")
 
