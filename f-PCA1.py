@@ -258,11 +258,11 @@ fig.update_yaxes(
     range=[y_min - y_range_margin, y_max + y_range_margin]
 )
 
-# ✅ 最終表示（インタラクティブ！）→ scrollZoom 有効化 + key 追加
+# ✅ 最終表示（インタラクティブ！）→ scrollZoom 有効化 + responsive + key 追加
 st.plotly_chart(
     fig,
     use_container_width=True,
-    config={"scrollZoom": True},  # ← これがスマホピンチに必須！
+    config={"scrollZoom": True, "responsive": True, "doubleClick": "reset"},
     key="pca_plot"
 )
 
