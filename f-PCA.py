@@ -159,7 +159,7 @@ sorted_handles_labels = [
 ]
 # Add "Your Impression"
 sorted_handles_labels.append((
-    ax.scatter([], [], color='green', s=200, marker='X'), 'Your Impression'
+    ax.scatter([], [], color='green', s=200, marker='X'), 'Entry Wine'
 ))
 
 sorted_handles, sorted_labels = zip(*sorted_handles_labels)
