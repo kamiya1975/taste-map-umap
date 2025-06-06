@@ -369,8 +369,8 @@ scatter_layer = pdk.Layer(
     auto_highlight=True
 )
 
-# ✅ Orthographic View（XY平面！）
-view = pdk.OrthographicView()
+# ✅ View（古い pydeck 互換 → OrthographicView を View(type=...) で指定！）
+view = pdk.View(type="OrthographicView")
 
 # ✅ ViewState セッティング（中心位置 & ズーム初期値）
 view_state = pdk.ViewState(
@@ -386,7 +386,7 @@ deck_map = pdk.Deck(
     initial_view_state=view_state,
     views=[view],
     map_style=None,  # 背景真っ白！
-    controller=True  # ← ここがGoogleMAP風Pan/Zoomのコントローラ
+    controller=True  # ← GoogleMAP風Pan/Zoom有効
 )
 
 # ✅ 表示
