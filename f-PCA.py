@@ -13,19 +13,28 @@ from scipy.spatial.distance import cdist
 # ✅ rcParams を初期化
 matplotlib.rcdefaults()
 
-# ✅ フォント fallback
+# ✅ フォント fallback をグローバル設定（GitHubでも安全）
 matplotlib.rc('font', family='Arial Unicode MS')
 
-# ✅ session_state に評価用 dict 初期化
-if "user_ratings_dict" not in st.session_state:
-    st.session_state.user_ratings_dict = {}
+# ✅ タイトルCSS（完全版）
+title_css = """
+<style>
+/* Streamlitのタイトル（emotionクラス対応） */
+h1 {
+    font-size: 32px !important;
+    margin-bottom: 10px !important;
+}
+</style>
+"""
+st.markdown(title_css, unsafe_allow_html=True)
 
 # ✅ タイトル
-st.title("TasteMAP（複合PCA軸版）＋ユーザー評価テスト")
+# st.title("TasteMAPテスト画面")
 
-# ✅ スライダー赤丸 CSS
+# ✅ スライダー赤丸 完全対応版
 slider_thumb_css = """
 <style>
+/* Streamlitのスライダーは div[role="slider"] を使う */
 div[role="slider"] {
     height: 32px !important;
     width: 32px !important;
@@ -37,6 +46,16 @@ div[role="slider"] {
 </style>
 """
 st.markdown(slider_thumb_css, unsafe_allow_html=True)
+
+# ✅ スライダー数値非表示CSS
+hide_slider_value_css = """
+<style>
+.stSlider > div > div > div > div > div {
+    visibility: hidden;
+}
+</style>
+"""
+st.markdown(hide_slider_value_css, unsafe_allow_html=True)
 
 # ✅ データ読み込み
 df = pd.read_csv("Merged_TasteDataDB15.csv")
