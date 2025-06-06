@@ -111,8 +111,8 @@ range_up_y    = y_max - blendF_y
 
 # ✅ スライダー
 st.subheader("基準のワインを飲んだ印象は？")
-slider_pc2 = st.slider("← 甘さ控えめ　　　　　　甘さ強め →", 0, 100, 50)
-slider_pc1 = st.slider("← 軽やか　　　　　　濃厚 →", 0, 100, 50)
+slider_pc2 = st.slider("← こんなに甘みはいらない　　　　　　もう少し甘みがほしいな →", 0, 100, 50)
+slider_pc1 = st.slider("← もう少し軽やかな感じがいいな　　　　もう少し濃厚なコクがほしいな →", 0, 100, 50)
 
 # ✅ スライダー → MAP座標変換
 # BodyAxis
