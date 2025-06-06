@@ -4,22 +4,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 import streamlit as st
-import os
-import matplotlib.font_manager as fm
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import cdist
 
-# ✅ rcParams を初期化
+# ✅ rcParams 初期化
 matplotlib.rcdefaults()
-
-# ✅ フォント fallback をグローバル設定（GitHubでも安全）
 matplotlib.rc('font', family='Arial Unicode MS')
 
-# ✅ タイトルCSS（完全版）
+# ✅ タイトル CSS
 title_css = """
 <style>
-/* Streamlitのタイトル（emotionクラス対応） */
 h1 {
     font-size: 32px !important;
     margin-bottom: 10px !important;
@@ -28,16 +23,12 @@ h1 {
 """
 st.markdown(title_css, unsafe_allow_html=True)
 
-# ✅ タイトル
-# st.title("TasteMAPテスト画面")
-
-# ✅ スライダー赤丸 完全対応版
+# ✅ スライダー赤丸（もっと大きく！）
 slider_thumb_css = """
 <style>
-/* Streamlitのスライダーは div[role="slider"] を使う */
 div[role="slider"] {
-    height: 32px !important;
-    width: 32px !important;
+    height: 30px !important;
+    width: 30px !important;
     background: red !important;
     border-radius: 50% !important;
     border: none !important;
@@ -47,7 +38,7 @@ div[role="slider"] {
 """
 st.markdown(slider_thumb_css, unsafe_allow_html=True)
 
-# ✅ スライダー数値非表示CSS
+# ✅ スライダー数値「50」非表示
 hide_slider_value_css = """
 <style>
 .stSlider > div > div > div > div > div {
@@ -60,7 +51,7 @@ st.markdown(hide_slider_value_css, unsafe_allow_html=True)
 # ✅ データ読み込み
 df = pd.read_csv("Merged_TasteDataDB15.csv")
 
-# ✅ 使用する成分
+# ✅ 使用成分
 features = [
     "20mm_L*", "20mm_a*", "20mm_b*",
     "Ethyl acetate", "Propanol", "2-Methylbutyl acetate", "Ethyl lactate", "Acetic acid",
@@ -79,14 +70,14 @@ features = [
 
 # ✅ 欠損除外
 df_clean = df.dropna(subset=features + ["Type", "JAN", "商品名"]).reset_index(drop=True)
+df_clean["JAN"] = df_clean["JAN"].astype(str)
 
-# ✅ PCA（3成分）
+# ✅ PCA
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(df_clean[features])
 pca = PCA(n_components=3)
 X_pca = pca.fit_transform(X_scaled)
 
-# ✅ 各軸の構成（複合PCA軸版）
 PC1 = X_pca[:, 0]
 PC2 = X_pca[:, 1]
 PC3 = X_pca[:, 2]
@@ -94,30 +85,49 @@ PC3 = X_pca[:, 2]
 甘味軸 = (PC2 + PC3) / np.sqrt(2)
 複合ボディ軸 = (PC1 + 甘味軸) / np.sqrt(2)
 
-# ✅ df_clean にセット
 df_clean["BodyAxis"] = 複合ボディ軸
 df_clean["SweetAxis"] = 甘味軸
 
-# ✅ Typeごとの色設定
+# ✅ 色設定
 color_map = {
-    "Spa": "blue", "White": "gold", "Red": "red", "Rose": "pink",
-    "ロゼ": "pink", "スパークリング": "blue", "白": "gold", "赤": "red"
+    "Spa": "blue", "White": "gold", "Red": "red", "Rose": "pink", "Entry Wine": "green"
 }
+legend_order = ["Spa", "White", "Red", "Rose", "Entry Wine"]
 
-# ✅ スライダー（PC1, PC2）
-st.subheader("基準のワインを飲んだ印象は？")
-slider_pc2 = st.slider("←　こんなに甘みはいらない 　　　　　　　　　　　　 　　　　　　　　　　　　もう少し甘みがほしいな　→", 0, 100, 50)
-slider_pc1 = st.slider("←　もう少し軽やかな感じがいいな 　　　　　　　　　　　　 　　　　　　もう少し濃厚なコクがほしいな　→", 0, 100, 50)
+# ✅ blendF の位置取得
+blendF_row = df_clean[df_clean["JAN"] == "blendF"].iloc[0]
+blendF_x = blendF_row["BodyAxis"]
+blendF_y = blendF_row["SweetAxis"]
 
-# ✅ PCA軸の min/max を取得
+# ✅ 軸の min/max
 x_min, x_max = df_clean["BodyAxis"].min(), df_clean["BodyAxis"].max()
 y_min, y_max = df_clean["SweetAxis"].min(), df_clean["SweetAxis"].max()
 
-# ✅ スライダー値を軸スケールに変換
-target_x = x_min + (slider_pc1 / 100) * (x_max - x_min)
-target_y = y_min + (slider_pc2 / 100) * (y_max - y_min)
+# ✅ Entry Wine からの距離
+range_left_x  = blendF_x - x_min
+range_right_x = x_max - blendF_x
+range_down_y  = blendF_y - y_min
+range_up_y    = y_max - blendF_y
 
-# ✅ 検索対象から "blendF" を除外
+# ✅ スライダー
+st.subheader("基準のワインを飲んだ印象は？")
+slider_pc2 = st.slider("← こんなに甘みはいらない　　　　　　もう少し甘みがほしいな →", 0, 100, 50)
+slider_pc1 = st.slider("← もう少し軽やかな感じがいいな　　　　もう少し濃厚なコクがほしいな →", 0, 100, 50)
+
+# ✅ スライダー → MAP座標変換
+# BodyAxis
+if slider_pc1 <= 50:
+    target_x = blendF_x - ((50 - slider_pc1) / 50) * range_left_x
+else:
+    target_x = blendF_x + ((slider_pc1 - 50) / 50) * range_right_x
+
+# SweetAxis
+if slider_pc2 <= 50:
+    target_y = blendF_y - ((50 - slider_pc2) / 50) * range_down_y
+else:
+    target_y = blendF_y + ((slider_pc2 - 50) / 50) * range_up_y
+
+# ✅ blendF 除外
 df_search = df_clean[df_clean["JAN"] != "blendF"].copy()
 
 # ✅ 一致度計算
@@ -130,57 +140,104 @@ df_sorted = df_search.sort_values("distance").head(10)
 # ✅ 散布図
 fig, ax = plt.subplots(figsize=(8, 8))
 
-# Typeごとにプロット
-for wine_type in df_clean["Type"].unique():
+# ワイン点
+for wine_type in legend_order:
     mask = df_clean["Type"] == wine_type
-    ax.scatter(
-        df_clean.loc[mask, "BodyAxis"],
-        df_clean.loc[mask, "SweetAxis"],
-        label=wine_type,
-        alpha=0.6,
-        color=color_map.get(wine_type, "gray")
-    )
+    if mask.sum() > 0:
+        ax.scatter(
+            df_clean.loc[mask, "BodyAxis"],
+            df_clean.loc[mask, "SweetAxis"],
+            label=wine_type,
+            alpha=0.6,
+            color=color_map.get(wine_type, "gray"),
+            s=20
+        )
 
-# ✅ 一致度TOP10 ハイライト（順位ラベル表示 改良版）
+# ✅ TOP10 ハイライト
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
-    # 黒丸
-    ax.scatter(
-        row["BodyAxis"], row["SweetAxis"],
-        color='black', edgecolor='white', s=240, marker='o'
-    )
-    # 順位番号 → 白文字・中央
-    ax.text(
-        row["BodyAxis"], row["SweetAxis"],  # 中央
-        str(idx),
-        fontsize=9,
-        color='white',
-        ha='center', va='center'
-    )
+    ax.scatter(row["BodyAxis"], row["SweetAxis"],
+               color='black', edgecolor='white', s=240, marker='o')
+    ax.text(row["BodyAxis"], row["SweetAxis"], str(idx),
+            fontsize=9, color='white', ha='center', va='center')
 
-# ✅ スライダー位置（ターゲット）マーク
-ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='point')
+# ✅ ユーザー印象 (緑X)
+ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='Your Impression')
 
-# ✅ 図の設定
-ax.set_xlabel("Body")
-ax.set_ylabel("Sweet")
+# ✅ ★ バブルチャート ← ⭐️ ⭐️ ⭐️ ここに if 追加 ⭐️
+if "user_ratings_dict" in st.session_state:
+    df_ratings_input = pd.DataFrame([
+        {"JAN": jan, "rating": rating}
+        for jan, rating in st.session_state.user_ratings_dict.items()
+        if rating > 0
+    ])
+
+    if not df_ratings_input.empty:
+        df_plot = df_clean.merge(df_ratings_input, on="JAN", how="inner")
+        
+        for i, row in df_plot.iterrows():
+            ax.scatter(
+                row["BodyAxis"], row["SweetAxis"],
+                s=row["rating"] * 320,
+                color='orange', alpha=0.5, edgecolor='black', linewidth=1.5
+            )
+        st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
+
+# ✅ 凡例
+handles, labels = ax.get_legend_handles_labels()
+sorted_handles_labels = [
+    (h, l) for l in legend_order for h, lbl in zip(handles, labels) if lbl == l
+]
+# + User Impression
+sorted_handles_labels.append((ax.scatter([], [], color='green', s=200, marker='X'), 'Your Impression'))
+
+if sorted_handles_labels:
+    sorted_handles, sorted_labels = zip(*sorted_handles_labels)
+    ax.legend(sorted_handles, sorted_labels, title="Type")
+
+# ✅ 軸設定
+ax.set_xlabel("-  Body  +")
+ax.set_ylabel("-  Sweet  +")
 ax.set_title("TasteMAP")
-ax.legend(title="Type")
 ax.grid(True)
-
-# ✅ 軸目盛り（tick）非表示
 ax.set_xticks([])
 ax.set_yticks([])
 
-# ✅ グラフ表示
+# ✅ 表示
 st.pyplot(fig)
 
-# ✅ 近いワイン TOP10 表示（静的テーブル版）
-st.subheader("近いワイン TOP10")
-df_sorted_display = df_sorted[["Type", "商品名", "希望小売価格"]].reset_index(drop=True)
-df_sorted_display.index += 1
+# ✅ TOP10（評価つき）
+st.subheader("近いワイン TOP10（評価つき）")
 
-# ✅ 希望小売価格 → 整形（例: 1,600 円）
-df_sorted_display["希望小売価格"] = df_sorted_display["希望小売価格"].apply(lambda x: f"{int(x):,} 円")
+# user_ratings_dict の初期化（もしなければ）
+if "user_ratings_dict" not in st.session_state:
+    st.session_state.user_ratings_dict = {}
 
-# ✅ 静的表示に変更
-st.table(df_sorted_display)
+# ★評価 options
+rating_options = ["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"]
+
+for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
+    jan = str(row["JAN"])
+    label_text = f"{idx}. {row['商品名']} ({row['Type']}) {int(row['希望小売価格']):,} 円"
+
+    current_rating = st.session_state.user_ratings_dict.get(jan, 0)
+    current_index = current_rating if 0 <= current_rating <= 5 else 0
+
+    col1, col2, col3 = st.columns([0.6, 0.2, 0.2])
+
+    with col1:
+        st.markdown(f"**{label_text}**")
+
+    with col2:
+        selected_index = st.selectbox(
+            " ", options=rating_options,
+            index=current_index,
+            key=f"rating_{jan}_selectbox"
+        )
+        new_rating = rating_options.index(selected_index)
+
+    with col3:
+        if st.button("反映", key=f"reflect_{jan}"):
+            st.session_state.user_ratings_dict[jan] = new_rating
+            st.rerun()
+
+    st.markdown("---")
