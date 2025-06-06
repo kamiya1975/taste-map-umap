@@ -195,10 +195,16 @@ st.subheader("近いワイン TOP10（評価つき）")
 if "user_ratings_dict" not in st.session_state:
     st.session_state.user_ratings_dict = {}
 
+# ⭐️ 表示用 options
+rating_options = ["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"]
+
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     jan = str(row["JAN"])
     label_text = f"{idx}. {row['商品名']} ({row['Type']}) {int(row['希望小売価格']):,} 円"
-    default_rating = st.session_state.user_ratings_dict.get(jan, 0)
+
+    # ⭐️ 現在の rating を ★ に変換して index に設定
+    current_rating = st.session_state.user_ratings_dict.get(jan, 0)
+    current_index = current_rating if current_rating >= 0 and current_rating <= 5 else 0
     
     col1, col2, col3 = st.columns([0.6, 0.2, 0.2])
     
@@ -206,15 +212,17 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
         st.markdown(f"**{label_text}**")
     
     with col2:
-        rating = st.selectbox(
-            " ", options=[0, 1, 2, 3, 4, 5],
-            index=default_rating,
+        selected_index = st.selectbox(
+            " ", options=rating_options,
+            index=current_index,
             key=f"rating_{jan}_selectbox"
         )
+        # ★ → 数値に変換
+        new_rating = rating_options.index(selected_index)
     
     with col3:
         if st.button("反映", key=f"reflect_{jan}"):
-            st.session_state.user_ratings_dict[jan] = rating
+            st.session_state.user_ratings_dict[jan] = new_rating
             st.rerun()
 
     st.markdown("---")
