@@ -211,7 +211,7 @@ if "user_ratings_dict" in st.session_state:
 
         st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
 
-# ✅ 改良版レイアウト整備（PCA複合軸をわかりやすく！）
+# ✅ レイアウト整備（dragmode=pan を追加！）
 fig.update_layout(
     title="TasteMAP (PCA複合軸版 Interactive)",
     xaxis_title="- Body +（PC1 + 甘味軸）",
@@ -219,8 +219,9 @@ fig.update_layout(
     showlegend=True,
     width=800,
     height=800,
-    plot_bgcolor="rgba(245,245,245,1)",  # 背景グレー
-    paper_bgcolor="rgba(245,245,245,1)"
+    plot_bgcolor="rgba(245,245,245,1)",
+    paper_bgcolor="rgba(245,245,245,1)",
+    dragmode="pan"  # ★★★ これを入れる！！ ★★★
 )
 
 # ✅ 軸の設定（目盛り復活＋ゼロ線＋グリッド＋ズーム固定）
