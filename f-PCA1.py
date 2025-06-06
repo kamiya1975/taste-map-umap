@@ -403,3 +403,45 @@ for t in color_map.keys():
 
     # ✅ 表示！（1枚ずつ確認用）
     st_pyecharts(scatter)
+
+# ✅ 必要ライブラリ
+import pydeck as pdk
+
+# ✅ DeckGL 用データ準備（PCA複合軸）
+df_deck = df_clean.copy()
+df_deck["x"] = df_deck["BodyAxis"]
+df_deck["y"] = df_deck["SweetAxis"]
+
+# ✅ Scatterplot Layer（背景真っ白 / GoogleMAP風）
+scatter_layer = pdk.Layer(
+    "ScatterplotLayer",
+    data=df_deck,
+    get_position=["x", "y"],
+    get_fill_color=[0, 128, 255, 160],  # 青
+    get_radius=50,
+    pickable=True,
+    auto_highlight=True
+)
+
+# ✅ Orthographic View（XY平面！）
+view = pdk.OrthographicView()
+
+# ✅ ViewState セッティング（中心位置 & ズーム初期値）
+view_state = pdk.ViewState(
+    target=[(x_min + x_max) / 2, (y_min + y_max) / 2, 0],  # XY中心
+    zoom=0,  # ここを調整して初期ズーム感整えられる（-2〜2くらい）
+    min_zoom=-5,
+    max_zoom=5
+)
+
+# ✅ Deck 作成
+deck_map = pdk.Deck(
+    layers=[scatter_layer],
+    initial_view_state=view_state,
+    views=[view],
+    map_style=None,  # 背景真っ白！
+    controller=True  # ← ここがGoogleMAP風Pan/Zoomのコントローラ
+)
+
+# ✅ 表示
+st.pydeck_chart(deck_map)
