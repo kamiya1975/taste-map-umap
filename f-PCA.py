@@ -163,7 +163,7 @@ ax.set_yticks([])
 # グラフ表示
 st.pyplot(fig)
 
-# ✅ TOP10 表示＋評価フォーム ← ボタン無し 即時反映版
+# ✅ TOP10 表示＋商品ごと反映ボタン版
 st.subheader("近いワイン TOP10（評価つき）")
 
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
@@ -175,22 +175,24 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     # ▶️ 既存の評価
     default_rating = st.session_state.user_ratings_dict.get(jan, 0)
     
-    # ▶️ 横並び：2カラム
-    col1, col2 = st.columns([0.7, 0.3])  # 調整可
+    # ▶️ 3カラム → [商品名] [selectbox] [button]
+    col1, col2, col3 = st.columns([0.6, 0.2, 0.2])  # 調整可
     
     with col1:
         st.markdown(f"**{label_text}**")
     
     with col2:
         rating = st.selectbox(
-            " ",   # ← ラベル無しでスッキリ
+            " ",  # ← ラベル無し
             options=[0, 1, 2, 3, 4, 5],
             index=default_rating,
-            key=f"rating_{jan}"
+            key=f"rating_{jan}_selectbox"
         )
     
-    # ▶️ 直接 session_state に即反映（フォームではないので自動）
-    st.session_state.user_ratings_dict[jan] = rating
+    with col3:
+        if st.button("反映", key=f"reflect_{jan}"):
+            st.session_state.user_ratings_dict[jan] = rating
+            st.success(f"✅ 「{row['商品名']}」 評価 {rating} を反映しました！")
     
     # 区切り線
     st.markdown("---")
