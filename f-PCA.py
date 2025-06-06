@@ -150,7 +150,7 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
             fontsize=9, color='white', ha='center', va='center')
 
 # ✅ Your Impression マーク (緑X)
-ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='Your Impression')
+ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='Entry Wine')
 
 # ✅ legend
 handles, labels = ax.get_legend_handles_labels()
