@@ -355,37 +355,41 @@ from pyecharts.charts import Scatter
 from pyecharts import options as opts
 from streamlit_echarts import st_pyecharts
 
-# ✅ PCA データ準備
-x_range_margin = (x_max - x_min) * 0.1
+# ✅ PCA データ準備（float 化）
+x_data = df_clean["BodyAxis"].astype(float).tolist()
 y_range_margin = (y_max - y_min) * 0.1
+x_range_margin = (x_max - x_min) * 0.1
 
 # ✅ Scatter インスタンス
 scatter = Scatter()
 
-# ✅ Type ごとに add_yaxis (XYペア！)
+# ✅ X軸は1回セット（pyechartsルール！）
+scatter.add_xaxis(x_data)
+
+# ✅ 各 Type ごとに Yデータだけ add_yaxis！
 for t in color_map.keys():
     df_t = df_clean[df_clean["Type"] == t]
-    xy_data = list(zip(df_t["BodyAxis"].astype(float), df_t["SweetAxis"].astype(float)))
-    
+    y_data_t = df_t["SweetAxis"].astype(float).tolist()
+
     scatter.add_yaxis(
         series_name=t,
-        y_axis=xy_data,
+        y_axis=y_data_t,
         symbol_size=10,
         label_opts=opts.LabelOpts(is_show=False),
         itemstyle_opts=opts.ItemStyleOpts(color=color_map[t])
     )
 
-# ✅ DataZoom → X/Y 両方
-datazoom_opts=[
-    opts.DataZoomOpts(),  # X軸バー
-    opts.DataZoomOpts(type_="inside"),  # X軸ピンチ
-    opts.DataZoomOpts(orient="vertical"),  # Y軸バー
-    opts.DataZoomOpts(type_="inside", orient="vertical")  # Y軸ピンチ
+# ✅ DataZoom
+datazoom_opts = [
+    opts.DataZoomOpts(),
+    opts.DataZoomOpts(type_="inside"),
+    opts.DataZoomOpts(orient="vertical"),
+    opts.DataZoomOpts(type_="inside", orient="vertical")
 ]
 
 # ✅ グローバル設定
 scatter.set_global_opts(
-    title_opts=opts.TitleOpts(title="TasteMAP (PCA複合軸・pyecharts版・改良)"),
+    title_opts=opts.TitleOpts(title="TasteMAP (PCA複合軸・pyecharts版・XY同期OK)"),
     xaxis_opts=opts.AxisOpts(
         name="- Body +",
         min_=x_min - x_range_margin,
@@ -397,7 +401,7 @@ scatter.set_global_opts(
         min_=y_min - y_range_margin,
         max_=y_max + y_range_margin
     ),
-    tooltip_opts=opts.TooltipOpts(trigger="item"),  # 1点ずつ表示
+    tooltip_opts=opts.TooltipOpts(trigger="item"),
     datazoom_opts=datazoom_opts
 )
 
