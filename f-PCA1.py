@@ -225,7 +225,9 @@ fig.update_layout(
 
     # ✅ 凡例（legend）を外に出す！
     legend=dict(
-        orientation="h", x=0, y=-0.2
+        orientation="h", 
+        x=0, 
+        y=-0.2
         bordercolor="black",
         borderwidth=0.5,
         bgcolor="rgba(255,255,255,0.8)"  # 半透明の白背景
