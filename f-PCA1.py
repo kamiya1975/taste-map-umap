@@ -355,42 +355,63 @@ from pyecharts.charts import Scatter
 from pyecharts import options as opts
 from streamlit_echarts import st_pyecharts
 
-# ✅ PCA データ準備（float 化を強制！ ← ここが重要）
-x_data = df_clean["BodyAxis"].astype(float).tolist()
-y_data = df_clean["SweetAxis"].astype(float).tolist()
-labels = df_clean["商品名"].tolist()
+# ✅ PCA データ準備（float化）
+df_clean["x"] = df_clean["BodyAxis"].astype(float)
+df_clean["y"] = df_clean["SweetAxis"].astype(float)
+df_clean["label"] = df_clean["商品名"]
 
-# ✅ 軸余白（Plotly で使ったものと共通化推奨）
+# ✅ 色設定 (pyecharts は HEX指定が確実！)
+color_hex_map = {
+    "Spa": "#0000FF",      # blue
+    "White": "#FFD700",    # gold
+    "Red": "#FF0000",      # red
+    "Rose": "#FFC0CB",     # pink
+    "Entry Wine": "#00FF00" # green
+}
+
+# ✅ 軸余白
 x_range_margin = (x_max - x_min) * 0.1
 y_range_margin = (y_max - y_min) * 0.1
 
-# ✅ Scatter 作成（軸設定を正しく！）
-scatter = (
-    Scatter()
-    .add_xaxis(x_data)
-    .add_yaxis("TasteMAP", y_data, label_opts=opts.LabelOpts(is_show=False))
-    .set_global_opts(
-        title_opts=opts.TitleOpts(title="TasteMAP (PCA複合軸・pyecharts版)"),
-        xaxis_opts=opts.AxisOpts(
-            name="- Body +",
-            min_=x_min - x_range_margin,
-            max_=x_max + x_range_margin,
-            is_inverse=True  # ✅ X軸逆転（Body軸！）
-        ),
-        yaxis_opts=opts.AxisOpts(
-            name="- Sweet +",
-            min_=y_min - y_range_margin,
-            max_=y_max + y_range_margin
-            # Y軸は通常通り → inverse 不要
-        ),
-        tooltip_opts=opts.TooltipOpts(trigger="axis"),
-        datazoom_opts=[
-            opts.DataZoomOpts(),  # 外ズームバー
-            opts.DataZoomOpts(type_="inside")  # ✅ ピンチズーム 有効
-        ],
-    )
+# ✅ Scatter 作成
+scatter = Scatter()
+
+# ✅ X軸設定
+scatter.add_xaxis(df_clean["x"].tolist())
+
+# ✅ Typeごとに yaxis追加（色指定！）
+for wine_type in legend_order:
+    df_type = df_clean[df_clean["Type"] == wine_type]
+    if not df_type.empty:
+        xy_data = list(zip(df_type["y"], df_type["label"]))  # (y, label)
+        scatter.add_yaxis(
+            series_name=wine_type,
+            y_axis=xy_data,
+            label_opts=opts.LabelOpts(is_show=False),
+            itemstyle_opts=opts.ItemStyleOpts(color=color_hex_map[wine_type])
+        )
+
+# ✅ 全体オプション
+scatter.set_global_opts(
+    title_opts=opts.TitleOpts(title="TasteMAP (PCA複合軸・pyecharts版・Type色分け)"),
+    xaxis_opts=opts.AxisOpts(
+        name="- Body +",
+        min_=x_min - x_range_margin,
+        max_=x_max + x_range_margin,
+        is_inverse=True  # ✅ X軸逆転
+    ),
+    yaxis_opts=opts.AxisOpts(
+        name="- Sweet +",
+        min_=y_min - y_range_margin,
+        max_=y_max + y_range_margin
+    ),
+    tooltip_opts=opts.TooltipOpts(trigger="axis"),
+    datazoom_opts=[
+        opts.DataZoomOpts(),  # 外ズームバー
+        opts.DataZoomOpts(type_="inside")  # ✅ ピンチズーム 有効
+    ],
+    legend_opts=opts.LegendOpts(pos_top="top", pos_left="center")  # ✅ 凡例位置
 )
 
 # ✅ 表示
 st_pyecharts(scatter)
-
