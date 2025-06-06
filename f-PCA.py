@@ -12,6 +12,42 @@ from scipy.spatial.distance import cdist
 matplotlib.rcdefaults()
 matplotlib.rc('font', family='Arial Unicode MS')
 
+# ✅ タイトル CSS
+title_css = """
+<style>
+h1 {
+    font-size: 32px !important;
+    margin-bottom: 10px !important;
+}
+</style>
+"""
+st.markdown(title_css, unsafe_allow_html=True)
+
+# ✅ スライダー赤丸（もっと大きく！）
+slider_thumb_css = """
+<style>
+div[role="slider"] {
+    height: 50px !important;
+    width: 50px !important;
+    background: red !important;
+    border-radius: 50% !important;
+    border: none !important;
+    cursor: pointer !important;
+}
+</style>
+"""
+st.markdown(slider_thumb_css, unsafe_allow_html=True)
+
+# ✅ スライダー数値「50」非表示
+hide_slider_value_css = """
+<style>
+.stSlider > div > div > div > div > div {
+    visibility: hidden;
+}
+</style>
+"""
+st.markdown(hide_slider_value_css, unsafe_allow_html=True)
+
 # ✅ データ読み込み
 df = pd.read_csv("Merged_TasteDataDB15.csv")
 
