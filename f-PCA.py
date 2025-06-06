@@ -13,13 +13,16 @@ from scipy.spatial.distance import cdist
 # ✅ rcParams を初期化
 matplotlib.rcdefaults()
 
-# ✅ フォント fallback をグローバル設定（GitHubでも安全）
+# ✅ フォント fallback をグローバル設定
 matplotlib.rc('font', family='Arial Unicode MS')
 
-# ✅ タイトルCSS（完全版）
+# ✅ session_state に評価用 dict 初期化
+if "user_ratings_dict" not in st.session_state:
+    st.session_state.user_ratings_dict = {}
+
+# ✅ タイトルCSS
 title_css = """
 <style>
-/* Streamlitのタイトル（emotionクラス対応） */
 h1 {
     font-size: 32px !important;
     margin-bottom: 10px !important;
@@ -29,12 +32,11 @@ h1 {
 st.markdown(title_css, unsafe_allow_html=True)
 
 # ✅ タイトル
-# st.title("TasteMAPテスト画面")
+st.title("TasteMAP（複合PCA軸版）＋ユーザー評価テスト")
 
 # ✅ スライダー赤丸 完全対応版
 slider_thumb_css = """
 <style>
-/* Streamlitのスライダーは div[role="slider"] を使う */
 div[role="slider"] {
     height: 32px !important;
     width: 32px !important;
@@ -46,16 +48,6 @@ div[role="slider"] {
 </style>
 """
 st.markdown(slider_thumb_css, unsafe_allow_html=True)
-
-# ✅ スライダー数値非表示CSS
-hide_slider_value_css = """
-<style>
-.stSlider > div > div > div > div > div {
-    visibility: hidden;
-}
-</style>
-"""
-st.markdown(hide_slider_value_css, unsafe_allow_html=True)
 
 # ✅ データ読み込み
 df = pd.read_csv("Merged_TasteDataDB15.csv")
@@ -80,19 +72,12 @@ features = [
 # ✅ 欠損除外
 df_clean = df.dropna(subset=features + ["Type", "JAN", "商品名"]).reset_index(drop=True)
 
-# ✅ PCA（3成分）
+# ✅ PCA（3成分 → 複合軸）
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(df_clean[features])
 pca = PCA(n_components=3)
 X_pca = pca.fit_transform(X_scaled)
 
-# ✅ PCA（3成分）
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(df_clean[features])
-pca = PCA(n_components=3)
-X_pca = pca.fit_transform(X_scaled)
-
-# ✅ 各軸の構成（複合PCA軸版）
 PC1 = X_pca[:, 0]
 PC2 = X_pca[:, 1]
 PC3 = X_pca[:, 2]
@@ -100,10 +85,8 @@ PC3 = X_pca[:, 2]
 甘味軸 = (PC2 + PC3) / np.sqrt(2)
 複合ボディ軸 = (PC1 + 甘味軸) / np.sqrt(2)
 
-# ✅ df_clean にセット
 df_clean["BodyAxis"] = 複合ボディ軸
 df_clean["SweetAxis"] = 甘味軸
-
 
 # ✅ Typeごとの色設定
 color_map = {
@@ -111,20 +94,19 @@ color_map = {
     "ロゼ": "pink", "スパークリング": "blue", "白": "gold", "赤": "red"
 }
 
-# ✅ スライダー（PC1, PC2）
+# ✅ スライダー（Body, Sweet）
 st.subheader("基準のワインを飲んだ印象は？")
-slider_pc2 = st.slider("←　こんなに甘みはいらない 　　　　　　　　　　　　 　　　　　　　　　　　　もう少し甘みがほしいな　→", 0, 100, 50)
-slider_pc1 = st.slider("←　もう少し軽やかな感じがいいな 　　　　　　　　　　　　 　　　　　　もう少し濃厚なコクがほしいな　→", 0, 100, 50)
+slider_pc2 = st.slider("← こんなに甘みはいらない　　　　　　もう少し甘みがほしいな →", 0, 100, 50)
+slider_pc1 = st.slider("← もう少し軽やかな感じがいいな　　　　もう少し濃厚なコクがほしいな →", 0, 100, 50)
 
-# ✅ PCA軸の min/max を取得
+# ✅ 軸スケール変換
 x_min, x_max = df_clean["BodyAxis"].min(), df_clean["BodyAxis"].max()
 y_min, y_max = df_clean["SweetAxis"].min(), df_clean["SweetAxis"].max()
 
-# ✅ スライダー値を軸スケールに変換
 target_x = x_min + (slider_pc1 / 100) * (x_max - x_min)
 target_y = y_min + (slider_pc2 / 100) * (y_max - y_min)
 
-# ✅ 検索対象から "blendF" を除外
+# ✅ blendF 除外
 df_search = df_clean[df_clean["JAN"] != "blendF"].copy()
 
 # ✅ 一致度計算
@@ -133,6 +115,37 @@ all_xy = df_search[["BodyAxis", "SweetAxis"]].values
 distances = cdist(target_xy, all_xy).flatten()
 df_search["distance"] = distances
 df_sorted = df_search.sort_values("distance").head(10)
+
+# ✅ TOP10 表示＋評価フォーム
+st.subheader("近いワイン TOP10（評価つき）")
+
+with st.form("rating_form"):
+    for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
+        jan = str(row["JAN"])
+        label = f"{idx}. {row['商品名']} ({row['Type']}) {int(row['希望小売価格']):,} 円"
+        
+        default_rating = st.session_state.user_ratings_dict.get(jan, 0)
+        
+        rating = st.selectbox(
+            label,
+            options=[0, 1, 2, 3, 4, 5],
+            index=default_rating,
+            key=f"rating_{jan}"
+        )
+        
+        st.session_state.user_ratings_dict[jan] = rating
+    
+    submitted = st.form_submit_button("評価を反映する")
+
+# ✅ 評価データ DataFrame 化
+df_ratings_input = pd.DataFrame([
+    {"JAN": jan, "rating": rating}
+    for jan, rating in st.session_state.user_ratings_dict.items()
+    if rating > 0
+])
+
+if not df_ratings_input.empty:
+    st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
 
 # ✅ 散布図
 fig, ax = plt.subplots(figsize=(8, 8))
@@ -148,46 +161,36 @@ for wine_type in df_clean["Type"].unique():
         color=color_map.get(wine_type, "gray")
     )
 
-# ✅ 一致度TOP10 ハイライト（順位ラベル表示 改良版）
+# 一致度TOP10 ハイライト
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
-    # 黒丸
-    ax.scatter(
-        row["BodyAxis"], row["SweetAxis"],
-        color='black', edgecolor='white', s=240, marker='o'
-    )
-    # 順位番号 → 白文字・中央
-    ax.text(
-        row["BodyAxis"], row["SweetAxis"],  # 中央
-        str(idx),
-        fontsize=9,
-        color='white',
-        ha='center', va='center'
-    )
+    ax.scatter(row["BodyAxis"], row["SweetAxis"],
+               color='black', edgecolor='white', s=240, marker='o')
+    ax.text(row["BodyAxis"], row["SweetAxis"], str(idx),
+            fontsize=9, color='white', ha='center', va='center')
 
-# ✅ スライダー位置（ターゲット）マーク
+# ターゲット位置
 ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='point')
 
-# ✅ 図の設定
-ax.set_xlabel("-   Body  +")
-ax.set_ylabel("-   Sweet  +")
+# ✅ バブルチャート重ね
+if not df_ratings_input.empty:
+    df_plot = df_clean.merge(df_ratings_input, on="JAN", how="inner")
+    
+    for i, row in df_plot.iterrows():
+        ax.scatter(
+            row["BodyAxis"], row["SweetAxis"],
+            s=row["rating"] * 80,
+            color='orange', alpha=0.5, edgecolor='black', linewidth=1.5,
+            label='User Rating' if i == 0 else ""
+        )
+
+# 図設定
+ax.set_xlabel("Body")
+ax.set_ylabel("Sweet")
 ax.set_title("TasteMAP")
 ax.legend(title="Type")
 ax.grid(True)
-
-# ✅ 軸目盛り（tick）非表示
 ax.set_xticks([])
 ax.set_yticks([])
 
-# ✅ グラフ表示
+# グラフ表示
 st.pyplot(fig)
-
-# ✅ 近いワイン TOP10 表示（静的テーブル版）
-st.subheader("近いワイン TOP10")
-df_sorted_display = df_sorted[["Type", "商品名", "希望小売価格"]].reset_index(drop=True)
-df_sorted_display.index += 1
-
-# ✅ 希望小売価格 → 整形（例: 1,600 円）
-df_sorted_display["希望小売価格"] = df_sorted_display["希望小売価格"].apply(lambda x: f"{int(x):,} 円")
-
-# ✅ 静的表示に変更
-st.table(df_sorted_display)
