@@ -358,7 +358,7 @@ df_deck = df_clean.copy()
 df_deck["x"] = df_deck["BodyAxis"]
 df_deck["y"] = df_deck["SweetAxis"]
 
-# ✅ Scatterplot Layer（背景真っ白 / GoogleMAP風）
+# ✅ Scatterplot Layer（背景真っ白 / GoogleMAP風操作）
 scatter_layer = pdk.Layer(
     "ScatterplotLayer",
     data=df_deck,
@@ -369,23 +369,26 @@ scatter_layer = pdk.Layer(
     auto_highlight=True
 )
 
-# ✅ ViewState（最新互換 → target 使わない！ center XYのみ！）
+# ✅ ViewState（XY軸 → PCA空間 → そのまま center XY → zoom もXY用に調整）
 view_state = pdk.ViewState(
-    longitude=(x_min + x_max) / 2,
-    latitude=(y_min + y_max) / 2,
-    zoom=0,  # 調整可能
+    longitude=(x_min + x_max) / 2,  # BodyAxis中心
+    latitude=(y_min + y_max) / 2,   # SweetAxis中心
+    zoom=0,  # 最初ズーム
     min_zoom=-5,
     max_zoom=5,
     bearing=0,
     pitch=0
 )
 
-# ✅ Deck（views=[] にする → Orthographic がなくても OKになる！）
+# ✅ Deck（背景真っ白 → 完全 PCA 空間！）
 deck_map = pdk.Deck(
     layers=[scatter_layer],
     initial_view_state=view_state,
-    map_style=None  # 背景真っ白
+    map_style=None,  # ← 背景なし！（ここで世界地図は消える！）
+    tooltip={"text": "x: {x}\ny: {y}"},
+    controller=True  # GoogleMAP風操作OK
 )
 
 # ✅ 表示
 st.pydeck_chart(deck_map)
+
