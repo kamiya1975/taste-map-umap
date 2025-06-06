@@ -149,3 +149,39 @@ ax.set_yticks([])
 
 # ✅ 表示
 st.pyplot(fig)
+
+st.subheader("近いワイン TOP10（評価つき）")
+
+# user_ratings_dict の初期化（もしなければ）
+if "user_ratings_dict" not in st.session_state:
+    st.session_state.user_ratings_dict = {}
+
+# ★評価 options
+rating_options = ["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"]
+
+for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
+    jan = str(row["JAN"])
+    label_text = f"{idx}. {row['商品名']} ({row['Type']}) {int(row['希望小売価格']):,} 円"
+
+    current_rating = st.session_state.user_ratings_dict.get(jan, 0)
+    current_index = current_rating if 0 <= current_rating <= 5 else 0
+
+    col1, col2, col3 = st.columns([0.6, 0.2, 0.2])
+
+    with col1:
+        st.markdown(f"**{label_text}**")
+
+    with col2:
+        selected_index = st.selectbox(
+            " ", options=rating_options,
+            index=current_index,
+            key=f"rating_{jan}_selectbox"
+        )
+        new_rating = rating_options.index(selected_index)
+
+    with col3:
+        if st.button("反映", key=f"reflect_{jan}"):
+            st.session_state.user_ratings_dict[jan] = new_rating
+            st.rerun()
+
+    st.markdown("---")
