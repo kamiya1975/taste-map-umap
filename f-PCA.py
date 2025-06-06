@@ -152,23 +152,24 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
 ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='point')
 
 # ✅ バブルチャート重ね
-df_ratings_input = pd.DataFrame([
-    {"JAN": jan, "rating": rating}
-    for jan, rating in st.session_state.user_ratings_dict.items()
-    if rating > 0
-])
+if "user_ratings_dict" in st.session_state:
+    df_ratings_input = pd.DataFrame([
+        {"JAN": jan, "rating": rating}
+        for jan, rating in st.session_state.user_ratings_dict.items()
+        if rating > 0
+    ])
 
-if not df_ratings_input.empty:
-    df_plot = df_clean.merge(df_ratings_input, on="JAN", how="inner")
-    
-    for i, row in df_plot.iterrows():
-        ax.scatter(
-            row["BodyAxis"], row["SweetAxis"],
-            s=row["rating"] * 80,
-            color='orange', alpha=0.5, edgecolor='black', linewidth=1.5,
-            label='User Rating' if i == 0 else ""
-        )
-    st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
+    if not df_ratings_input.empty:
+        df_plot = df_clean.merge(df_ratings_input, on="JAN", how="inner")
+        
+        for i, row in df_plot.iterrows():
+            ax.scatter(
+                row["BodyAxis"], row["SweetAxis"],
+                s=row["rating"] * 80,
+                color='orange', alpha=0.5, edgecolor='black', linewidth=1.5,
+                label='User Rating' if i == 0 else ""
+            )
+        st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
 
 # 図設定
 ax.set_xlabel("Body")
