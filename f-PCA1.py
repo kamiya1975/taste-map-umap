@@ -369,26 +369,28 @@ scatter_layer = pdk.Layer(
     auto_highlight=True
 )
 
-# ✅ ViewState（XY軸 → PCA空間 → そのまま center XY → zoom もXY用に調整）
+# ✅ ViewState（XY軸 → PCA空間 → center XY → zoom もXY用に調整）
 view_state = pdk.ViewState(
     longitude=(x_min + x_max) / 2,  # BodyAxis中心
     latitude=(y_min + y_max) / 2,   # SweetAxis中心
-    zoom=0,  # 最初ズーム
+    zoom=0,  # 最初ズーム（deck では 0 基準、あとで調整OK）
     min_zoom=-5,
     max_zoom=5,
     bearing=0,
     pitch=0
 )
 
-# ✅ Deck（背景真っ白 → 完全 PCA 空間！）
+# ✅ Deck 完全版
 deck_map = pdk.Deck(
     layers=[scatter_layer],
     initial_view_state=view_state,
-    map_style=None,  # ← 背景なし！（ここで世界地図は消える！）
+    map_style=None,  # ← 背景真っ白！
     tooltip={"text": "x: {x}\ny: {y}"},
-    controller=True  # GoogleMAP風操作OK
+    # controller=True ← これが原因！ → 最新 pydeck は不要
+    # 最新は "controller" 不要で GoogleMap風動作になる
 )
 
 # ✅ 表示
 st.pydeck_chart(deck_map)
+
 
