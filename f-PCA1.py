@@ -223,15 +223,14 @@ fig.update_layout(
     paper_bgcolor="rgba(245,245,245,1)",
     dragmode="pan",
 
-    # ✅ 凡例（legend）を外に出す！
     legend=dict(
-        orientation="h", 
-        x=0, 
-        y=-0.2
-        bordercolor="black",
-        borderwidth=0.5,
-        bgcolor="rgba(255,255,255,0.8)"  # 半透明の白背景
-    )
+    orientation="h",
+    x=0,
+    y=-0.2,
+    bordercolor="black",
+    borderwidth=0.5,
+    bgcolor="rgba(255,255,255,0.8)"  # 半透明の白背景
+)
 )
 
 # ✅ 軸の設定（目盛り復活＋ゼロ線＋グリッド＋ズーム固定）
