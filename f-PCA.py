@@ -105,12 +105,13 @@ st.subheader("基準のワインを飲んだ印象は？")
 x_range = 10
 y_range = 10
 
-slider_pc1 = st.slider(
+slider_pc2 = st.slider(
     "← こんなに甘みはいらない　　　　　　もう少し甘みがほしいな →", 0, 100, 50
 )
-slider_pc2 = st.slider(
+slider_pc1 = st.slider(
     "← もう少し軽やかな感じがいいな　　　　もう少し濃厚なコクがほしいな →", 0, 100, 50
 )
+
 
 # スケーリング
 target_x = blendF_x + ((slider_pc1 - 50) / 100) * x_range
