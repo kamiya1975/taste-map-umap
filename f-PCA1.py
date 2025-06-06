@@ -211,7 +211,7 @@ if "user_ratings_dict" in st.session_state:
 
         st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
 
-# ✅ レイアウト整備（dragmode=pan を追加！）
+# ✅ レイアウト整備（dragmode=pan + legend横並び + 背景グレー）
 fig.update_layout(
     title="TasteMAP (PCA複合軸版 Interactive)",
     xaxis_title="- Body +（PC1 + 甘味軸）",
@@ -223,17 +223,21 @@ fig.update_layout(
     paper_bgcolor="rgba(245,245,245,1)",
     dragmode="pan",
 
+    # ✅ 凡例（legend）を外に出す（下に横並び）
     legend=dict(
-    orientation="h",
-    x=0,
-    y=-0.2,
-    bordercolor="black",
-    borderwidth=0.5,
-    bgcolor="rgba(255,255,255,0.8)"  # 半透明の白背景
-)
+        orientation="h",
+        x=0,
+        y=-0.15,  # ← y=-0.1〜-0.15 がスマホ/PC両方でバランス良い
+        bordercolor="black",
+        borderwidth=0.5,
+        bgcolor="rgba(255,255,255,0.8)"
+    )
 )
 
 # ✅ 軸の設定（目盛り復活＋ゼロ線＋グリッド＋ズーム固定）
+x_range_margin = (x_max - x_min) * 0.1
+y_range_margin = (y_max - y_min) * 0.1
+
 fig.update_xaxes(
     title_text="- Body +（PC1 + 甘味軸）",
     showticklabels=True,
@@ -241,7 +245,7 @@ fig.update_xaxes(
     zerolinewidth=2,
     zerolinecolor='black',
     gridcolor='lightgray',
-    range=[x_min - 0.5, x_max + 0.5]  # 初期ズーム固定
+    range=[x_min - x_range_margin, x_max + x_range_margin]
 )
 
 fig.update_yaxes(
@@ -251,11 +255,16 @@ fig.update_yaxes(
     zerolinewidth=2,
     zerolinecolor='black',
     gridcolor='lightgray',
-    range=[y_min - 0.5, y_max + 0.5]  # 初期ズーム固定
+    range=[y_min - y_range_margin, y_max + y_range_margin]
 )
 
-# ✅ 表示（インタラクティブ！）＋ スクロールズーム有効化＋ key 追加
-st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True}, key="pca_plot")
+# ✅ 最終表示（インタラクティブ！）→ scrollZoom 有効化 + key 追加
+st.plotly_chart(
+    fig,
+    use_container_width=True,
+    config={"scrollZoom": True},  # ← これがスマホピンチに必須！
+    key="pca_plot"
+)
 
 # ✅ TOP10（評価つき）
 st.subheader("近いワイン TOP10（評価つき）")
