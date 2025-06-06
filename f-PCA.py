@@ -162,7 +162,7 @@ if "user_ratings_dict" in st.session_state:
         for i, row in df_plot.iterrows():
             ax.scatter(
                 row["BodyAxis"], row["SweetAxis"],
-                s=row["rating"] * 160,
+                s=row["rating"] * 320,
                 color='orange', alpha=0.5, edgecolor='black', linewidth=1.5
             )
         st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
