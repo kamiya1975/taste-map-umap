@@ -72,6 +72,9 @@ features = [
 # ✅ 欠損除外
 df_clean = df.dropna(subset=features + ["Type", "JAN", "商品名"]).reset_index(drop=True)
 
+# ✅ JAN を str に揃える ← これが最新版の重要ポイント！！
+df_clean["JAN"] = df_clean["JAN"].astype(str)
+
 # ✅ PCA（3成分 → 複合軸）
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(df_clean[features])
