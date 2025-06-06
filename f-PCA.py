@@ -10,18 +10,28 @@ from scipy.spatial.distance import cdist
 
 # ✅ rcParams を初期化
 matplotlib.rcdefaults()
+
+# ✅ フォント設定
 matplotlib.rc('font', family='Arial Unicode MS')
 
-# ✅ CSS（タイトル / スライダー赤丸 / スライダー数値非表示）
+# ✅ タイトルCSS
 st.markdown("""
 <style>
-h1 { font-size: 32px !important; margin-bottom: 10px !important; }
+h1 {
+    font-size: 32px !important;
+    margin-bottom: 10px !important;
+}
 div[role="slider"] {
-    height: 32px !important; width: 32px !important;
-    background: red !important; border-radius: 50% !important; border: none !important;
+    height: 32px !important;
+    width: 32px !important;
+    background: red !important;
+    border-radius: 50% !important;
+    border: none !important;
     cursor: pointer !important;
 }
-.stSlider > div > div > div > div > div { visibility: hidden; }
+.stSlider > div > div > div > div > div {
+    visibility: hidden;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -49,24 +59,28 @@ features = [
 df_clean = df.dropna(subset=features + ["Type", "JAN", "商品名"]).reset_index(drop=True)
 df_clean["JAN"] = df_clean["JAN"].astype(str)
 
-# ✅ PCA（複合軸）
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(df_clean[features])
-pca = PCA(n_components=3)
-X_pca = pca.fit_transform(X_scaled)
+# ✅ PCA → Entry Wine 除外で fit
+df_pca_fit = df_clean[df_clean["JAN"] != "blendF"]
 
-PC1 = X_pca[:, 0]
-PC2 = X_pca[:, 1]
-PC3 = X_pca[:, 2]
+scaler = StandardScaler()
+X_scaled_fit = scaler.fit_transform(df_pca_fit[features])
+pca = PCA(n_components=3)
+X_pca_fit = pca.fit_transform(X_scaled_fit)
+
+# ✅ 全体 transform（Entry Wine 含む全データに transform）
+X_scaled_all = scaler.transform(df_clean[features])
+X_pca_all = pca.transform(X_scaled_all)
+
+# ✅ 軸構成
+PC1 = X_pca_all[:, 0]
+PC2 = X_pca_all[:, 1]
+PC3 = X_pca_all[:, 2]
 
 甘味軸 = (PC2 + PC3) / np.sqrt(2)
 複合ボディ軸 = (PC1 + 甘味軸) / np.sqrt(2)
 
 df_clean["BodyAxis"] = 複合ボディ軸
 df_clean["SweetAxis"] = 甘味軸
-
-# ✅ Entry Wine のType変換 ← ここ重要！
-df_clean.loc[df_clean["JAN"] == "blendF", "Type"] = "Entry Wine"
 
 # ✅ 色設定＋凡例順
 legend_order = ["Spa", "White", "Red", "Rose", "Entry Wine"]
@@ -86,10 +100,8 @@ y_min, y_max = df_clean["SweetAxis"].min(), df_clean["SweetAxis"].max()
 target_x = x_min + (slider_pc1 / 100) * (x_max - x_min)
 target_y = y_min + (slider_pc2 / 100) * (y_max - y_min)
 
-# ✅ blendF 除外
+# ✅ blendF 除外して TOP10計算
 df_search = df_clean[df_clean["JAN"] != "blendF"].copy()
-
-# ✅ 一致度
 target_xy = np.array([[target_x, target_y]])
 all_xy = df_search[["BodyAxis", "SweetAxis"]].values
 distances = cdist(target_xy, all_xy).flatten()
@@ -99,7 +111,7 @@ df_sorted = df_search.sort_values("distance").head(10)
 # ✅ 散布図
 fig, ax = plt.subplots(figsize=(8, 8))
 
-# ワイン打点 → s=20
+# Type別ワイン打点 → s=20
 for wine_type in legend_order:
     mask = df_clean["Type"] == wine_type
     if mask.sum() > 0:
@@ -129,14 +141,12 @@ if "user_ratings_dict" in st.session_state:
         for jan, rating in st.session_state.user_ratings_dict.items()
         if rating > 0
     ])
-
     if not df_ratings_input.empty:
         df_plot = df_clean.merge(df_ratings_input, on="JAN", how="inner")
-        
         for i, row in df_plot.iterrows():
             ax.scatter(
                 row["BodyAxis"], row["SweetAxis"],
-                s=row["rating"] * 320,  # ← バブル大きさ調整
+                s=row["rating"] * 320,
                 color='orange', alpha=0.5, edgecolor='black', linewidth=1.5
             )
         st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
@@ -146,7 +156,7 @@ ax.set_xlabel("-  Body  +")
 ax.set_ylabel("-  Sweet  +")
 ax.set_title("TasteMAP")
 
-# 凡例
+# 凡例 → User Rating 無し
 handles, labels = ax.get_legend_handles_labels()
 sorted_handles_labels = [
     (h, l) for l in legend_order for h, lbl in zip(handles, labels) if lbl == l
@@ -168,6 +178,7 @@ st.subheader("近いワイン TOP10（評価つき）")
 if "user_ratings_dict" not in st.session_state:
     st.session_state.user_ratings_dict = {}
 
+# ⭐️ 表示用 options
 rating_options = ["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"]
 
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
@@ -176,12 +187,12 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
 
     current_rating = st.session_state.user_ratings_dict.get(jan, 0)
     current_index = current_rating if 0 <= current_rating <= 5 else 0
-    
+
     col1, col2, col3 = st.columns([0.6, 0.2, 0.2])
-    
+
     with col1:
         st.markdown(f"**{label_text}**")
-    
+
     with col2:
         selected_index = st.selectbox(
             " ", options=rating_options,
@@ -189,7 +200,7 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
             key=f"rating_{jan}_selectbox"
         )
         new_rating = rating_options.index(selected_index)
-    
+
     with col3:
         if st.button("反映", key=f"reflect_{jan}"):
             st.session_state.user_ratings_dict[jan] = new_rating
