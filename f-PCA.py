@@ -163,12 +163,14 @@ ax.set_yticks([])
 # グラフ表示
 st.pyplot(fig)
 
-# ✅ TOP10 表示＋商品ごと反映ボタン版（改良版・1回でOK・通知なし）
+import streamlit as st
+
+# ✅ TOP10 表示＋商品ごと反映ボタン版（完全版・1回でOK）
 st.subheader("近いワイン TOP10（評価つき）")
 
-# ▶️ 「今回押されたボタン」のJAN を保存するキー
-if "last_reflected_jan" not in st.session_state:
-    st.session_state.last_reflected_jan = None
+# ▶️ 「ユーザー評価 dict」がなければ初期化
+if "user_ratings_dict" not in st.session_state:
+    st.session_state.user_ratings_dict = {}
 
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     jan = str(row["JAN"])
@@ -197,9 +199,8 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
         if st.button("反映", key=f"reflect_{jan}"):
             # ▶️ 評価を保存
             st.session_state.user_ratings_dict[jan] = rating
-            # ▶️ どの商品が反映されたか記録（次のリランでマップが更新される）
-            st.session_state.last_reflected_jan = jan
+            # ✅ ここで強制リラン！（1回押すだけでマップ更新OK）
+            st.experimental_rerun()
     
     # 区切り線
     st.markdown("---")
-
