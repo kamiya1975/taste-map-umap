@@ -13,7 +13,7 @@ from scipy.spatial.distance import cdist
 # ✅ rcParams を初期化
 matplotlib.rcdefaults()
 
-# ✅ フォント fallback をグローバル設定（GitHubでも安全）
+# ✅ フォント fallback
 matplotlib.rc('font', family='Arial Unicode MS')
 
 # ✅ タイトルCSS
@@ -74,8 +74,6 @@ features = [
 
 # ✅ 欠損除外
 df_clean = df.dropna(subset=features + ["Type", "JAN", "商品名"]).reset_index(drop=True)
-
-# ✅ JAN を str に
 df_clean["JAN"] = df_clean["JAN"].astype(str)
 
 # ✅ PCA
