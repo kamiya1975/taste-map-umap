@@ -13,28 +13,17 @@ from scipy.spatial.distance import cdist
 # ✅ rcParams を初期化
 matplotlib.rcdefaults()
 
-# ✅ フォント fallback をグローバル設定
+# ✅ フォント fallback
 matplotlib.rc('font', family='Arial Unicode MS')
 
 # ✅ session_state に評価用 dict 初期化
 if "user_ratings_dict" not in st.session_state:
     st.session_state.user_ratings_dict = {}
 
-# ✅ タイトルCSS
-title_css = """
-<style>
-h1 {
-    font-size: 32px !important;
-    margin-bottom: 10px !important;
-}
-</style>
-"""
-st.markdown(title_css, unsafe_allow_html=True)
-
 # ✅ タイトル
 st.title("TasteMAP（複合PCA軸版）＋ユーザー評価テスト")
 
-# ✅ スライダー赤丸 完全対応版
+# ✅ スライダー赤丸 CSS
 slider_thumb_css = """
 <style>
 div[role="slider"] {
@@ -72,7 +61,7 @@ features = [
 # ✅ 欠損除外
 df_clean = df.dropna(subset=features + ["Type", "JAN", "商品名"]).reset_index(drop=True)
 
-# ✅ JAN を str に揃える ← これが最新版の重要ポイント！！
+# ✅ JAN を str に揃える
 df_clean["JAN"] = df_clean["JAN"].astype(str)
 
 # ✅ PCA（3成分 → 複合軸）
@@ -97,7 +86,7 @@ color_map = {
     "ロゼ": "pink", "スパークリング": "blue", "白": "gold", "赤": "red"
 }
 
-# ✅ スライダー（Body, Sweet）
+# ✅ スライダー（Body, Sweet） ← 先頭
 st.subheader("基準のワインを飲んだ印象は？")
 slider_pc2 = st.slider("← こんなに甘みはいらない　　　　　　もう少し甘みがほしいな →", 0, 100, 50)
 slider_pc1 = st.slider("← もう少し軽やかな感じがいいな　　　　もう少し濃厚なコクがほしいな →", 0, 100, 50)
@@ -119,38 +108,7 @@ distances = cdist(target_xy, all_xy).flatten()
 df_search["distance"] = distances
 df_sorted = df_search.sort_values("distance").head(10)
 
-# ✅ TOP10 表示＋評価フォーム
-st.subheader("近いワイン TOP10（評価つき）")
-
-with st.form("rating_form"):
-    for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
-        jan = str(row["JAN"])
-        label = f"{idx}. {row['商品名']} ({row['Type']}) {int(row['希望小売価格']):,} 円"
-        
-        default_rating = st.session_state.user_ratings_dict.get(jan, 0)
-        
-        rating = st.selectbox(
-            label,
-            options=[0, 1, 2, 3, 4, 5],
-            index=default_rating,
-            key=f"rating_{jan}"
-        )
-        
-        st.session_state.user_ratings_dict[jan] = rating
-    
-    submitted = st.form_submit_button("評価を反映する")
-
-# ✅ 評価データ DataFrame 化
-df_ratings_input = pd.DataFrame([
-    {"JAN": jan, "rating": rating}
-    for jan, rating in st.session_state.user_ratings_dict.items()
-    if rating > 0
-])
-
-if not df_ratings_input.empty:
-    st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
-
-# ✅ 散布図
+# ✅ 散布図 ← ここをスライダーの次に
 fig, ax = plt.subplots(figsize=(8, 8))
 
 # Typeごとにプロット
@@ -175,6 +133,12 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
 ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='point')
 
 # ✅ バブルチャート重ね
+df_ratings_input = pd.DataFrame([
+    {"JAN": jan, "rating": rating}
+    for jan, rating in st.session_state.user_ratings_dict.items()
+    if rating > 0
+])
+
 if not df_ratings_input.empty:
     df_plot = df_clean.merge(df_ratings_input, on="JAN", how="inner")
     
@@ -185,6 +149,7 @@ if not df_ratings_input.empty:
             color='orange', alpha=0.5, edgecolor='black', linewidth=1.5,
             label='User Rating' if i == 0 else ""
         )
+    st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
 
 # 図設定
 ax.set_xlabel("Body")
@@ -197,3 +162,24 @@ ax.set_yticks([])
 
 # グラフ表示
 st.pyplot(fig)
+
+# ✅ TOP10 表示＋評価フォーム ← 最後に配置
+st.subheader("近いワイン TOP10（評価つき）")
+
+with st.form("rating_form"):
+    for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
+        jan = str(row["JAN"])
+        label = f"{idx}. {row['商品名']} ({row['Type']}) {int(row['希望小売価格']):,} 円"
+        
+        default_rating = st.session_state.user_ratings_dict.get(jan, 0)
+        
+        rating = st.selectbox(
+            label,
+            options=[0, 1, 2, 3, 4, 5],
+            index=default_rating,
+            key=f"rating_{jan}"
+        )
+        
+        st.session_state.user_ratings_dict[jan] = rating
+    
+    submitted = st.form_submit_button("評価を反映する")
