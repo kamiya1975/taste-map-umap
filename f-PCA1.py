@@ -348,3 +348,35 @@ deck_map = pdk.Deck(
 
 # ✅ 表示
 st.pydeck_chart(deck_map)
+
+pip install pyecharts streamlit-echarts
+
+# ✅ 必要ライブラリ
+from pyecharts.charts import Scatter
+from pyecharts import options as opts
+from streamlit_echarts import st_pyecharts
+
+# ✅ PCA データ準備
+x_data = df_clean["BodyAxis"].tolist()
+y_data = df_clean["SweetAxis"].tolist()
+labels = df_clean["商品名"].tolist()
+
+# ✅ Scatter 作成（基本版）
+scatter = (
+    Scatter()
+    .add_xaxis(x_data)
+    .add_yaxis("TasteMAP", y_data, label_opts=opts.LabelOpts(is_show=False))
+    .set_global_opts(
+        title_opts=opts.TitleOpts(title="TasteMAP (PCA複合軸・pyecharts版)"),
+        xaxis_opts=opts.AxisOpts(name="- Body +"),
+        yaxis_opts=opts.AxisOpts(name="- Sweet +"),
+        tooltip_opts=opts.TooltipOpts(trigger="axis"),
+        datazoom_opts=[
+            opts.DataZoomOpts(),  # 外にズームバー
+            opts.DataZoomOpts(type_="inside")  # ピンチズーム対応！
+        ],
+    )
+)
+
+# ✅ 表示
+st_pyecharts(scatter)
