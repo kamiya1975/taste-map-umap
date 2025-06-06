@@ -360,25 +360,22 @@ x_data = df_clean["BodyAxis"].tolist()
 y_data = df_clean["SweetAxis"].tolist()
 labels = df_clean["商品名"].tolist()
 
-# ✅ XY データ（X, Y ペア）← これが重要
-xy_data = list(zip(x_data, y_data))
-
-# ✅ Scatter 作成（正しい版！）
+# ✅ Scatter 作成（x, y 正しいセット版！）
 scatter = (
     Scatter()
-    .add_yaxis("TasteMAP", xy_data, label_opts=opts.LabelOpts(is_show=False))
+    .add_xaxis(x_data)
+    .add_yaxis("TasteMAP", y_data, label_opts=opts.LabelOpts(is_show=False))
     .set_global_opts(
         title_opts=opts.TitleOpts(title="TasteMAP (PCA複合軸・pyecharts版)"),
         xaxis_opts=opts.AxisOpts(name="- Body +"),
         yaxis_opts=opts.AxisOpts(name="- Sweet +"),
-        tooltip_opts=opts.TooltipOpts(trigger="item"),
+        tooltip_opts=opts.TooltipOpts(trigger="axis"),
         datazoom_opts=[
             opts.DataZoomOpts(),  # 外にズームバー
-            opts.DataZoomOpts(type_="inside")  # ピンチズーム（スマホOK）
+            opts.DataZoomOpts(type_="inside")  # ピンチズーム対応！
         ],
     )
 )
 
 # ✅ 表示
 st_pyecharts(scatter)
-
