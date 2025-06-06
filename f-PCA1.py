@@ -358,6 +358,11 @@ df_deck = df_clean.copy()
 df_deck["x"] = df_deck["BodyAxis"]
 df_deck["y"] = df_deck["SweetAxis"]
 
+# ✅ DeckGL 用データ準備（PCA複合軸）
+df_deck = df_clean.copy()
+df_deck["x"] = df_deck["BodyAxis"]
+df_deck["y"] = df_deck["SweetAxis"]
+
 # ✅ 色マップ（RGBA形式に変更 → Deck用！）
 color_map_rgba = {
     "Spa": [0, 0, 255, 160],         # 青
@@ -406,4 +411,3 @@ deck_map = pdk.Deck(
 
 # ✅ 表示
 st.pydeck_chart(deck_map)
-
