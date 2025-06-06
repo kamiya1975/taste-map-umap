@@ -388,7 +388,7 @@ scatter_layer = pdk.Layer(
 view_state = pdk.ViewState(
     longitude=0,
     latitude=0,
-    zoom=0,
+    zoom=3,    # ← ここを変更！（今は 0 → 小さすぎる）
     min_zoom=-5,
     max_zoom=20,
     bearing=0,
@@ -406,10 +406,9 @@ deck_map = pdk.Deck(
 # ✅ 表示
 st.pydeck_chart(deck_map)
 
-
 # ✅ 仮の Legend を Streamlit 側に出す
 st.markdown("### Type Legend")
-for t, color in color_map_rgba.items():
+for t, color in type_color_rgb.items():  # ← 修正
     rgba_css = f"rgba({color[0]}, {color[1]}, {color[2]}, {color[3]/255})"
     st.markdown(f'<div style="display:inline-block;width:20px;height:20px;background:{rgba_css};margin-right:10px;"></div> {t}', unsafe_allow_html=True)
 
