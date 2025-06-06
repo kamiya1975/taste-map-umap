@@ -358,35 +358,52 @@ df_deck = df_clean.copy()
 df_deck["x"] = df_deck["BodyAxis"]
 df_deck["y"] = df_deck["SweetAxis"]
 
-# ✅ Scatterplot Layer（背景真っ白 / GoogleMAP風操作）
+# ✅ 色マップ（RGBA形式に変更 → Deck用！）
+color_map_rgba = {
+    "Spa": [0, 0, 255, 160],         # 青
+    "White": [255, 215, 0, 160],     # 金
+    "Red": [255, 0, 0, 160],         # 赤
+    "Rose": [255, 182, 193, 160],    # ピンク
+    "Entry Wine": [0, 255, 0, 160]   # 緑
+}
+
+# ✅ Type に応じた色を列に追加
+df_deck["color"] = df_deck["Type"].map(color_map_rgba)
+df_deck["color"] = df_deck["color"].apply(lambda x: x if x is not None else [128, 128, 128, 160])  # fallback gray
+
+# ✅ Scatterplot Layer（Type色分け版！）
 scatter_layer = pdk.Layer(
     "ScatterplotLayer",
     data=df_deck,
-    get_position=["x", "y"],
-    get_fill_color=[0, 128, 255, 160],  # 青
+    get_position="[x, y]",
+    get_fill_color="color",
     get_radius=50,
     pickable=True,
     auto_highlight=True
 )
 
-# ✅ ViewState
+# ✅ Viewport セッティング（GoogleMAP風！）
+x_center = (x_min + x_max) / 2
+y_center = (y_min + y_max) / 2
+zoom_level = 2
+
 view_state = pdk.ViewState(
-    longitude=(x_min + x_max) / 2,
-    latitude=(y_min + y_max) / 2,
-    zoom=0,
-    min_zoom=-5,
-    max_zoom=5,
+    longitude=x_center,
+    latitude=y_center,
+    zoom=zoom_level,
+    min_zoom=1,
+    max_zoom=10,
     bearing=0,
     pitch=0
 )
 
-# ✅ Deck 完全版
+# ✅ Deck 作成 → これで MAP 出せる！
 deck_map = pdk.Deck(
     layers=[scatter_layer],
     initial_view_state=view_state,
-    map_style=None,
-    tooltip={"text": "x: {x}\ny: {y}"}
+    map_style=None  # 背景は白
 )
 
 # ✅ 表示
 st.pydeck_chart(deck_map)
+
