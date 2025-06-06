@@ -351,60 +351,6 @@ view_state = pdk.ViewState(
 
 
 # ✅ 必要ライブラリ
-from pyecharts.charts import Scatter
-from pyecharts import options as opts
-from streamlit_echarts import st_pyecharts
-
-# ✅ 軸余白（Plotly で使ったものと共通化推奨）
-x_range_margin = (x_max - x_min) * 0.1
-y_range_margin = (y_max - y_min) * 0.1
-
-# ✅ 各 Type ごとに 1枚ずつ Scatter 出す！
-for t in color_map.keys():
-    df_t = df_clean[df_clean["Type"] == t]
-    x_data_t = df_t["BodyAxis"].astype(float).tolist()
-    y_data_t = df_t["SweetAxis"].astype(float).tolist()
-
-    # ✅ Scatter インスタンス
-    scatter = Scatter()
-    
-    # ✅ X,Y 同時セット！
-    scatter.add_xaxis(x_data_t)
-    scatter.add_yaxis(
-        series_name=t,
-        y_axis=y_data_t,
-        symbol_size=10,
-        label_opts=opts.LabelOpts(is_show=False),
-        itemstyle_opts=opts.ItemStyleOpts(color=color_map[t])
-    )
-
-    # ✅ オプション
-    scatter.set_global_opts(
-        title_opts=opts.TitleOpts(title=f"TasteMAP (PCA複合軸) - {t}"),
-        xaxis_opts=opts.AxisOpts(
-            name="- Body +",
-            min_=x_min - x_range_margin,
-            max_=x_max + x_range_margin,
-            is_inverse=True
-        ),
-        yaxis_opts=opts.AxisOpts(
-            name="- Sweet +",
-            min_=y_min - y_range_margin,
-            max_=y_max + y_range_margin
-        ),
-        tooltip_opts=opts.TooltipOpts(trigger="item"),
-        datazoom_opts=[
-            opts.DataZoomOpts(),  # 外ズームバー
-            opts.DataZoomOpts(type_="inside"),  # ピンチズーム
-            opts.DataZoomOpts(orient="vertical"),  # 縦ズームバー
-            opts.DataZoomOpts(type_="inside", orient="vertical")  # 縦ピンチズーム
-        ]
-    )
-
-    # ✅ 表示！（1枚ずつ確認用）
-    st_pyecharts(scatter)
-
-# ✅ 必要ライブラリ
 import pydeck as pdk
 
 # ✅ DeckGL 用データ準備（PCA複合軸）
