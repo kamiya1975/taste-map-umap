@@ -4,53 +4,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 import streamlit as st
-import os
-import matplotlib.font_manager as fm
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import cdist
 
 # ✅ rcParams を初期化
 matplotlib.rcdefaults()
-
-# ✅ フォント fallback
 matplotlib.rc('font', family='Arial Unicode MS')
 
-# ✅ タイトルCSS
-title_css = """
+# ✅ CSS（タイトル / スライダー赤丸 / スライダー数値非表示）
+st.markdown("""
 <style>
-h1 {
-    font-size: 32px !important;
-    margin-bottom: 10px !important;
-}
-</style>
-"""
-st.markdown(title_css, unsafe_allow_html=True)
-
-# ✅ スライダー赤丸 CSS
-slider_thumb_css = """
-<style>
+h1 { font-size: 32px !important; margin-bottom: 10px !important; }
 div[role="slider"] {
-    height: 32px !important;
-    width: 32px !important;
-    background: red !important;
-    border-radius: 50% !important;
-    border: none !important;
+    height: 32px !important; width: 32px !important;
+    background: red !important; border-radius: 50% !important; border: none !important;
     cursor: pointer !important;
 }
+.stSlider > div > div > div > div > div { visibility: hidden; }
 </style>
-"""
-st.markdown(slider_thumb_css, unsafe_allow_html=True)
-
-# ✅ スライダー数値 非表示
-hide_slider_value_css = """
-<style>
-.stSlider > div > div > div > div > div {
-    visibility: hidden;
-}
-</style>
-"""
-st.markdown(hide_slider_value_css, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # ✅ データ読み込み
 df = pd.read_csv("Merged_TasteDataDB15.csv")
@@ -76,7 +49,7 @@ features = [
 df_clean = df.dropna(subset=features + ["Type", "JAN", "商品名"]).reset_index(drop=True)
 df_clean["JAN"] = df_clean["JAN"].astype(str)
 
-# ✅ PCA
+# ✅ PCA（複合軸）
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(df_clean[features])
 pca = PCA(n_components=3)
@@ -91,6 +64,9 @@ PC3 = X_pca[:, 2]
 
 df_clean["BodyAxis"] = 複合ボディ軸
 df_clean["SweetAxis"] = 甘味軸
+
+# ✅ Entry Wine のType変換 ← ここ重要！
+df_clean.loc[df_clean["JAN"] == "blendF", "Type"] = "Entry Wine"
 
 # ✅ 色設定＋凡例順
 legend_order = ["Spa", "White", "Red", "Rose", "Entry Wine"]
@@ -123,7 +99,7 @@ df_sorted = df_search.sort_values("distance").head(10)
 # ✅ 散布図
 fig, ax = plt.subplots(figsize=(8, 8))
 
-# Type別ワイン打点 → s=20
+# ワイン打点 → s=20
 for wine_type in legend_order:
     mask = df_clean["Type"] == wine_type
     if mask.sum() > 0:
@@ -146,7 +122,7 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
 # ターゲット位置
 ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='point')
 
-# バブルチャート（session_state 保護つき）
+# バブルチャート
 if "user_ratings_dict" in st.session_state:
     df_ratings_input = pd.DataFrame([
         {"JAN": jan, "rating": rating}
@@ -160,7 +136,7 @@ if "user_ratings_dict" in st.session_state:
         for i, row in df_plot.iterrows():
             ax.scatter(
                 row["BodyAxis"], row["SweetAxis"],
-                s=row["rating"] * 320,
+                s=row["rating"] * 320,  # ← バブル大きさ調整
                 color='orange', alpha=0.5, edgecolor='black', linewidth=1.5
             )
         st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
@@ -170,12 +146,11 @@ ax.set_xlabel("-  Body  +")
 ax.set_ylabel("-  Sweet  +")
 ax.set_title("TasteMAP")
 
-# 凡例 → User Rating 無し
+# 凡例
 handles, labels = ax.get_legend_handles_labels()
 sorted_handles_labels = [
     (h, l) for l in legend_order for h, lbl in zip(handles, labels) if lbl == l
 ]
-
 if sorted_handles_labels:
     sorted_handles, sorted_labels = zip(*sorted_handles_labels)
     ax.legend(sorted_handles, sorted_labels, title="Type")
@@ -193,16 +168,14 @@ st.subheader("近いワイン TOP10（評価つき）")
 if "user_ratings_dict" not in st.session_state:
     st.session_state.user_ratings_dict = {}
 
-# ⭐️ 表示用 options
 rating_options = ["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"]
 
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     jan = str(row["JAN"])
     label_text = f"{idx}. {row['商品名']} ({row['Type']}) {int(row['希望小売価格']):,} 円"
 
-    # ⭐️ 現在の rating を ★ に変換して index に設定
     current_rating = st.session_state.user_ratings_dict.get(jan, 0)
-    current_index = current_rating if current_rating >= 0 and current_rating <= 5 else 0
+    current_index = current_rating if 0 <= current_rating <= 5 else 0
     
     col1, col2, col3 = st.columns([0.6, 0.2, 0.2])
     
@@ -215,7 +188,6 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
             index=current_index,
             key=f"rating_{jan}_selectbox"
         )
-        # ★ → 数値に変換
         new_rating = rating_options.index(selected_index)
     
     with col3:
