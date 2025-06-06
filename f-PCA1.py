@@ -211,19 +211,42 @@ if "user_ratings_dict" in st.session_state:
 
         st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
 
-# ✅ レイアウト整備
+# ✅ 改良版レイアウト整備（PCA複合軸をわかりやすく！）
 fig.update_layout(
-    title="TasteMAP (Interactive)",
-    xaxis_title="-  Body  +",
-    yaxis_title="-  Sweet  +",
+    title="TasteMAP (PCA複合軸版 Interactive)",
+    xaxis_title="- Body +（PC1 + 甘味軸）",
+    yaxis_title="- Sweet +（PC2 + PC3）",
     showlegend=True,
     width=800,
-    height=800
+    height=800,
+    plot_bgcolor="rgba(245,245,245,1)",  # 背景グレー
+    paper_bgcolor="rgba(245,245,245,1)"
 )
 
-# ✅ 軸の目盛りを消す（現状維持にあわせる場合）
-fig.update_xaxes(showticklabels=False)
-fig.update_yaxes(showticklabels=False)
+# ✅ 軸の設定（目盛り復活＋ゼロ線＋グリッド＋ズーム固定）
+fig.update_xaxes(
+    title_text="- Body +（PC1 + 甘味軸）",
+    showticklabels=True,
+    zeroline=True,
+    zerolinewidth=2,
+    zerolinecolor='black',
+    gridcolor='lightgray',
+    range=[x_min - 0.5, x_max + 0.5]  # 初期ズーム固定
+)
+
+fig.update_yaxes(
+    title_text="- Sweet +（PC2 + PC3）",
+    showticklabels=True,
+    zeroline=True,
+    zerolinewidth=2,
+    zerolinecolor='black',
+    gridcolor='lightgray',
+    range=[y_min - 0.5, y_max + 0.5]  # 初期ズーム固定
+)
+
+# ✅ 表示（インタラクティブ！）
+st.plotly_chart(fig, use_container_width=True)
+
 
 # ✅ 表示（インタラクティブ！）
 st.plotly_chart(fig, use_container_width=True)
