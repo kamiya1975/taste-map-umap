@@ -254,8 +254,8 @@ fig.update_yaxes(
     range=[y_min - 0.5, y_max + 0.5]  # 初期ズーム固定
 )
 
-# ✅ 表示（インタラクティブ！）
-st.plotly_chart(fig, use_container_width=True)
+# ✅ 表示（インタラクティブ！）＋ スクロールズーム有効化＋ key 追加
+st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True}, key="pca_plot")
 
 # ✅ TOP10（評価つき）
 st.subheader("近いワイン TOP10（評価つき）")
