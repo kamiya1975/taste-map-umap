@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import cdist
 
-# ✅ rcParams を初期化
+# ✅ rcParams 初期化
 matplotlib.rcdefaults()
 matplotlib.rc('font', family='Arial Unicode MS')
 
@@ -23,7 +23,7 @@ h1 {
 """
 st.markdown(title_css, unsafe_allow_html=True)
 
-# ✅ スライダー赤丸
+# ✅ スライダー赤丸（もっと大きく！）
 slider_thumb_css = """
 <style>
 div[role="slider"] {
@@ -163,23 +163,24 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
 # ✅ ユーザー印象 (緑X)
 ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='Your Impression')
 
-# ✅ ⭐️ ⭐️ ⭐️ 評価バブル ⭐️ ⭐️ ⭐️
-df_ratings_input = pd.DataFrame([
-    {"JAN": jan, "rating": rating}
-    for jan, rating in st.session_state.user_ratings_dict.items()
-    if rating > 0
-])
+# ✅ ★ バブルチャート ← ⭐️ ⭐️ ⭐️ ここに if 追加 ⭐️
+if "user_ratings_dict" in st.session_state:
+    df_ratings_input = pd.DataFrame([
+        {"JAN": jan, "rating": rating}
+        for jan, rating in st.session_state.user_ratings_dict.items()
+        if rating > 0
+    ])
 
-if not df_ratings_input.empty:
-    df_plot = df_clean.merge(df_ratings_input, on="JAN", how="inner")
-    
-    for i, row in df_plot.iterrows():
-        ax.scatter(
-            row["BodyAxis"], row["SweetAxis"],
-            s=row["rating"] * 320,  # ⭐️ サイズ調整
-            color='orange', alpha=0.5, edgecolor='black', linewidth=1.5
-        )
-    st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
+    if not df_ratings_input.empty:
+        df_plot = df_clean.merge(df_ratings_input, on="JAN", how="inner")
+        
+        for i, row in df_plot.iterrows():
+            ax.scatter(
+                row["BodyAxis"], row["SweetAxis"],
+                s=row["rating"] * 320,
+                color='orange', alpha=0.5, edgecolor='black', linewidth=1.5
+            )
+        st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
 
 # ✅ 凡例
 handles, labels = ax.get_legend_handles_labels()
@@ -204,14 +205,14 @@ ax.set_yticks([])
 # ✅ 表示
 st.pyplot(fig)
 
-# ✅ 近いワイン TOP10（評価つき）
+# ✅ TOP10（評価つき）
 st.subheader("近いワイン TOP10（評価つき）")
 
-# ⭐️ user_ratings_dict 初期化
+# user_ratings_dict の初期化（もしなければ）
 if "user_ratings_dict" not in st.session_state:
     st.session_state.user_ratings_dict = {}
 
-# ⭐️ 評価 options
+# ★評価 options
 rating_options = ["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"]
 
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
