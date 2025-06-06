@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import matplotlib
 import streamlit as st
 import os
-import matplotlib.font_manager as fm
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import cdist
@@ -17,7 +16,10 @@ matplotlib.rc('font', family='Arial Unicode MS')
 # ✅ タイトルCSS
 title_css = """
 <style>
-h1 { font-size: 32px !important; margin-bottom: 10px !important; }
+h1 {
+    font-size: 32px !important;
+    margin-bottom: 10px !important;
+}
 </style>
 """
 st.markdown(title_css, unsafe_allow_html=True)
@@ -49,6 +51,7 @@ st.markdown(hide_slider_value_css, unsafe_allow_html=True)
 
 # ✅ データ読み込み
 df = pd.read_csv("Merged_TasteDataDB15.csv")
+df["JAN"] = df["JAN"].astype(str)
 
 # ✅ 使用する成分
 features = [
@@ -69,7 +72,6 @@ features = [
 
 # ✅ 欠損除外
 df_clean = df.dropna(subset=features + ["Type", "JAN", "商品名"]).reset_index(drop=True)
-df_clean["JAN"] = df_clean["JAN"].astype(str)
 
 # ✅ PCA
 scaler = StandardScaler()
@@ -93,29 +95,26 @@ color_map_fixed = {
     "Spa": "blue", "White": "gold", "Red": "red", "Rose": "pink"
 }
 
-# ✅ Entry Wine位置取得
-blendF_row = df_clean[df_clean["JAN"] == "blendF"].iloc[0]
-blendF_x = blendF_row["BodyAxis"]
-blendF_y = blendF_row["SweetAxis"]
+# ✅ Entry Wine (blendF) 位置取得
+blendF_row = df_clean[df_clean["JAN"] == "blendF"]
+if not blendF_row.empty:
+    blendF_x = blendF_row["BodyAxis"].values[0]
+    blendF_y = blendF_row["SweetAxis"].values[0]
+else:
+    blendF_x, blendF_y = 0, 0  # fallback
 
 # ✅ スライダー
 st.subheader("基準のワインを飲んだ印象は？")
+slider_pc2 = st.slider("← こんなに甘みはいらない　　　　　　もう少し甘みがほしいな →", 0, 100, 50)
+slider_pc1 = st.slider("← もう少し軽やかな感じがいいな　　　　もう少し濃厚なコクがほしいな →", 0, 100, 50)
 
-# ★ blendF中心 → スライダーは50:50 → ±10範囲にする
-x_range = 10
-y_range = 10
+# ✅ 軸スケール min/max
+x_min, x_max = df_clean["BodyAxis"].min(), df_clean["BodyAxis"].max()
+y_min, y_max = df_clean["SweetAxis"].min(), df_clean["SweetAxis"].max()
 
-slider_pc2 = st.slider(
-    "← こんなに甘みはいらない　　　　　　もう少し甘みがほしいな →", 0, 100, 50
-)
-slider_pc1 = st.slider(
-    "← もう少し軽やかな感じがいいな　　　　もう少し濃厚なコクがほしいな →", 0, 100, 50
-)
-
-
-# スケーリング
-target_x = blendF_x + ((slider_pc1 - 50) / 100) * x_range
-target_y = blendF_y + ((slider_pc2 - 50) / 100) * y_range
+# ✅ スライダーを MAP全体 min-max にマッピング
+target_x = x_min + (slider_pc1 / 100) * (x_max - x_min)
+target_y = y_min + (slider_pc2 / 100) * (y_max - y_min)
 
 # ✅ blendF 除外
 df_search = df_clean[df_clean["JAN"] != "blendF"].copy()
@@ -143,6 +142,9 @@ for wine_type in legend_order:
             s=20
         )
 
+# ✅ Entry Wine 打点
+ax.scatter(blendF_x, blendF_y, color='green', s=200, marker='X', label='Entry Wine')
+
 # TOP10 ハイライト
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     ax.scatter(row["BodyAxis"], row["SweetAxis"],
@@ -150,29 +152,27 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     ax.text(row["BodyAxis"], row["SweetAxis"], str(idx),
             fontsize=9, color='white', ha='center', va='center')
 
-# ✅ Your Impression マーク (緑X)
-ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='Entry Wine')
+# ✅ スライダー位置（Your Impression）
+ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='Your Impression')
 
-# ✅ legend
-handles, labels = ax.get_legend_handles_labels()
-sorted_handles_labels = [
-    (h, l) for l in legend_order for h, lbl in zip(handles, labels) if lbl == l
-]
-# Add "Your Impression"
-sorted_handles_labels.append((
-    ax.scatter([], [], color='green', s=200, marker='X'), 'Entry Wine'
-))
-
-sorted_handles, sorted_labels = zip(*sorted_handles_labels)
-ax.legend(sorted_handles, sorted_labels, title="Type")
-
-# ✅ Grid & Axes
+# 図設定
 ax.set_xlabel("-  Body  +")
 ax.set_ylabel("-  Sweet  +")
 ax.set_title("TasteMAP")
+
+# 凡例（Entry Wineは残す）
+handles, labels = ax.get_legend_handles_labels()
+sorted_handles_labels = [
+    (h, l) for l in legend_order + ["Entry Wine"] for h, lbl in zip(handles, labels) if lbl == l
+]
+
+if sorted_handles_labels:
+    sorted_handles, sorted_labels = zip(*sorted_handles_labels)
+    ax.legend(sorted_handles, sorted_labels, title="Type")
+
 ax.grid(True)
 ax.set_xticks([])
 ax.set_yticks([])
 
-# ✅ グラフ
+# グラフ
 st.pyplot(fig)
