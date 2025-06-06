@@ -369,25 +369,25 @@ scatter_layer = pdk.Layer(
     auto_highlight=True
 )
 
-# ✅ View（古い pydeck 互換 → OrthographicView を View(type=...) で指定！）
+# ✅ View（古い pydeck 互換 → OrthographicView 相当）
 view = pdk.View(type="OrthographicView")
 
-# ✅ ViewState セッティング（中心位置 & ズーム初期値）
+# ✅ ViewState（中心位置・ズーム）
 view_state = pdk.ViewState(
-    target=[(x_min + x_max) / 2, (y_min + y_max) / 2, 0],  # XY中心
-    zoom=0,  # ここを調整して初期ズーム感整えられる（-2〜2くらい）
+    target=[(x_min + x_max) / 2, (y_min + y_max) / 2, 0],
+    zoom=0,  # 初期ズーム調整可（例：0、-1、1）
     min_zoom=-5,
     max_zoom=5
 )
 
-# ✅ Deck 作成
+# ✅ Deck 作成（互換版！ → controller は不要 → views=[view] だけ指定！）
 deck_map = pdk.Deck(
     layers=[scatter_layer],
     initial_view_state=view_state,
     views=[view],
-    map_style=None,  # 背景真っ白！
-    controller=True  # ← GoogleMAP風Pan/Zoom有効
+    map_style=None  # 背景真っ白
 )
 
 # ✅ 表示
 st.pydeck_chart(deck_map)
+
