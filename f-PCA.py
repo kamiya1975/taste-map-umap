@@ -187,12 +187,28 @@ ax.set_xlabel("-  Body  +")
 ax.set_ylabel("-  Sweet  +")
 ax.set_title("TasteMAP")
 
-# 凡例
+# 凡例 → Entry Wine は skip する（Your Impression は残す）
 handles, labels = ax.get_legend_handles_labels()
+
+# legend_order から Entry Wine は外す（描画はするが legend に載せない）
+legend_order_display = ["Spa", "White", "Red", "Rose"]
+
+# ソート & Entry Wine は出さない
 sorted_handles_labels = [
-    (h, l) for l in legend_order + ['Entry Wine (True)', 'Your Impression']
+    (h, l) for l in legend_order_display
     for h, lbl in zip(handles, labels) if lbl == l
 ]
+
+# Your Impression は残す
+for h, lbl in zip(handles, labels):
+    if lbl == "Your Impression":
+        sorted_handles_labels.append((h, lbl))
+
+# 最終 legend
+if sorted_handles_labels:
+    sorted_handles, sorted_labels = zip(*sorted_handles_labels)
+    ax.legend(sorted_handles, sorted_labels, title="Type")
+
 
 ax.grid(True)
 ax.set_xticks([])
