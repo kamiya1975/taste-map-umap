@@ -358,7 +358,11 @@ df_deck = df_clean.copy()
 df_deck["x"] = df_deck["BodyAxis"]
 df_deck["y"] = df_deck["SweetAxis"]
 
-# ✅ Deck 用 カラー変換 → RGB (0-255)
+# ✅ ① 中心座標を 0,0 にシフト（Deck が扱いやすくなる！）
+df_deck["x_shift"] = df_deck["x"] - (x_min + x_max) / 2
+df_deck["y_shift"] = df_deck["y"] - (y_min + y_max) / 2
+
+# ✅ ② Deck 用 カラー変換 → RGB
 type_color_rgb = {
     "Spa": [0, 0, 255, 180],         # 青
     "White": [255, 215, 0, 180],     # ゴールド
@@ -367,42 +371,39 @@ type_color_rgb = {
     "Entry Wine": [0, 255, 0, 180],  # 緑
 }
 
-# 各行に RGB カラー列を追加
 df_deck["color"] = df_deck["Type"].map(type_color_rgb).apply(lambda x: x if x is not None else [100, 100, 100, 180])
 
-# ✅ Scatterplot Layer（背景真っ白 / XY空間！）
+# ✅ Scatterplot Layer（背景白）
 scatter_layer = pdk.Layer(
     "ScatterplotLayer",
     data=df_deck,
-    get_position=["x", "y"],   # XY空間
-    get_fill_color="color",    # RGB
-    get_radius=50,
+    get_position=["x_shift", "y_shift"],
+    get_fill_color="color",
+    get_radius=100,   # ← 少し大きめにして見やすく
     pickable=True,
     auto_highlight=True
 )
 
-# ✅ XY空間として ViewState 調整（地図にしない）
-# → x/y の中心 & range を Deck 側に設定
+# ✅ ViewState は "ダミー緯度経度" でOK → 画面操作は Deck 側で自由に動く
 view_state = pdk.ViewState(
-    longitude=0,  # ダミー → 実際は XY空間
+    longitude=0,
     latitude=0,
-    zoom=0,       # zoom=0 → Deck 側は scale に依存
+    zoom=0,
     min_zoom=-5,
     max_zoom=20,
     bearing=0,
-    pitch=0,
-    target=[(x_min + x_max) / 2, (y_min + y_max) / 2]  # 中心 XY座標
+    pitch=0
 )
 
-# ✅ Deck 作成（背景白にする！）
+# ✅ Deck 作成
 deck_map = pdk.Deck(
     layers=[scatter_layer],
     initial_view_state=view_state,
-    map_style=None,  # 背景真っ白
+    map_style=None,   # 背景白
     tooltip={"text": "{商品名} ({Type})"}
 )
 
-# ✅ Deck 表示
+# ✅ 表示
 st.pydeck_chart(deck_map)
 
 
