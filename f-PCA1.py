@@ -355,12 +355,16 @@ from pyecharts.charts import Scatter
 from pyecharts import options as opts
 from streamlit_echarts import st_pyecharts
 
-# ✅ PCA データ準備
-x_data = df_clean["BodyAxis"].tolist()
-y_data = df_clean["SweetAxis"].tolist()
+# ✅ PCA データ準備（float 化を強制！ ← ここが重要）
+x_data = df_clean["BodyAxis"].astype(float).tolist()
+y_data = df_clean["SweetAxis"].astype(float).tolist()
 labels = df_clean["商品名"].tolist()
 
-# ✅ Scatter 作成（軸反転＋範囲セット版！）
+# ✅ 軸余白（Plotly で使ったものと共通化推奨）
+x_range_margin = (x_max - x_min) * 0.1
+y_range_margin = (y_max - y_min) * 0.1
+
+# ✅ Scatter 作成（軸設定を正しく！）
 scatter = (
     Scatter()
     .add_xaxis(x_data)
@@ -371,17 +375,18 @@ scatter = (
             name="- Body +",
             min_=x_min - x_range_margin,
             max_=x_max + x_range_margin,
-            is_inverse=True  # ✅ 正しいパラメータ名！
+            is_inverse=True  # ✅ X軸逆転（Body軸！）
         ),
         yaxis_opts=opts.AxisOpts(
             name="- Sweet +",
             min_=y_min - y_range_margin,
             max_=y_max + y_range_margin
+            # Y軸は通常通り → inverse 不要
         ),
         tooltip_opts=opts.TooltipOpts(trigger="axis"),
         datazoom_opts=[
             opts.DataZoomOpts(),  # 外ズームバー
-            opts.DataZoomOpts(type_="inside")  # ピンチズーム
+            opts.DataZoomOpts(type_="inside")  # ✅ ピンチズーム 有効
         ],
     )
 )
