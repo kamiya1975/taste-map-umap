@@ -142,9 +142,6 @@ for wine_type in legend_order:
             s=20
         )
 
-# Entry Wine マーク（緑Pマーク）
-ax.scatter(blendF_x, blendF_y, color='green', s=400, marker='P', label="Entry Wine (True)")
-
 # TOP10 ハイライト
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     ax.scatter(row["BodyAxis"], row["SweetAxis"],
@@ -193,7 +190,7 @@ sorted_handles_labels = [
 
 # Your Impression は出す
 for h, lbl in zip(handles, labels):
-    if lbl == "Your Impression":
+    if lbl == "Entry Wine":
         sorted_handles_labels.append((h, lbl))
 
 # 最終 legend
