@@ -311,18 +311,18 @@ df_deck = df_clean.copy()
 df_deck["x"] = df_deck["BodyAxis"]
 df_deck["y"] = df_deck["SweetAxis"]
 
-# ✅ Scatterplot Layer（シンプル版）
+# ✅ Scatterplot Layer（シンプル版 → 背景真っ白）
 scatter_layer = pdk.Layer(
     "ScatterplotLayer",
     data=df_deck,
     get_position="[x, y]",
     get_fill_color="[0, 128, 255, 160]",  # 青
-    get_radius=50,  # 半径
+    get_radius=50,
     pickable=True,
     auto_highlight=True
 )
 
-# ✅ Viewport セッティング（中央・ズーム）
+# ✅ Viewport セッティング
 x_center = (x_min + x_max) / 2
 y_center = (y_min + y_max) / 2
 zoom_level = 2
@@ -337,11 +337,11 @@ view_state = pdk.ViewState(
     pitch=0
 )
 
-# ✅ DeckGL map
+# ✅ DeckGL map（背景真っ白にする → map_style=None）
 deck_map = pdk.Deck(
     layers=[scatter_layer],
     initial_view_state=view_state,
-    map_style=None  # 背景は None（PCA 軸なので）
+    map_style=None  # ← ここがポイント！ → 地図なし、真っ白
 )
 
 # ✅ 表示
