@@ -130,58 +130,78 @@ df_sorted = df_search.sort_values("distance").head(10)
 # ✅ 散布図 ← ここをスライダーの次に
 fig, ax = plt.subplots(figsize=(8, 8))
 
-# Typeごとにプロット
-for wine_type in df_clean["Type"].unique():
-    mask = df_clean["Type"] == wine_type
-    ax.scatter(
-        df_clean.loc[mask, "BodyAxis"],
-        df_clean.loc[mask, "SweetAxis"],
-        label=wine_type,
-        alpha=0.6,
-        color=color_map.get(wine_type, "gray")
-    )
+# ✅ 凡例に出す順番を固定
+legend_order = ["Spa", "White", "Red", "Rose", "Entry Wine"]
+color_map_fixed = {
+    "Spa": "blue", "White": "gold", "Red": "red", "Rose": "pink", "Entry Wine": "green"
+}
 
-# 一致度TOP10 ハイライト
+# ✅ プロット（ワイン打点サイズ 1/2 → s=20）
+for wine_type in legend_order:
+    mask = df_clean["Type"] == wine_type
+    if mask.sum() > 0:  # 存在する場合のみ
+        ax.scatter(
+            df_clean.loc[mask, "BodyAxis"],
+            df_clean.loc[mask, "SweetAxis"],
+            label=wine_type,
+            alpha=0.6,
+            color=color_map_fixed.get(wine_type, "gray"),
+            s=20  # ★ 小さく
+        )
+
+# ✅ 一致度TOP10 ハイライト
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     ax.scatter(row["BodyAxis"], row["SweetAxis"],
                color='black', edgecolor='white', s=240, marker='o')
     ax.text(row["BodyAxis"], row["SweetAxis"], str(idx),
             fontsize=9, color='white', ha='center', va='center')
 
-# ターゲット位置
+# ✅ ターゲット位置
 ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='point')
 
-# ✅ バブルチャート重ね
-if "user_ratings_dict" in st.session_state:
-    df_ratings_input = pd.DataFrame([
-        {"JAN": jan, "rating": rating}
-        for jan, rating in st.session_state.user_ratings_dict.items()
-        if rating > 0
-    ])
+# ✅ バブルチャート重ね（サイズ2倍 → *160）
+df_ratings_input = pd.DataFrame([
+    {"JAN": jan, "rating": rating}
+    for jan, rating in st.session_state.user_ratings_dict.items()
+    if rating > 0
+])
 
-    if not df_ratings_input.empty:
-        df_plot = df_clean.merge(df_ratings_input, on="JAN", how="inner")
-        
-        for i, row in df_plot.iterrows():
-            ax.scatter(
-                row["BodyAxis"], row["SweetAxis"],
-                s=row["rating"] * 80,
-                color='orange', alpha=0.5, edgecolor='black', linewidth=1.5,
-                label='User Rating' if i == 0 else ""
-            )
-        st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
+if not df_ratings_input.empty:
+    df_plot = df_clean.merge(df_ratings_input, on="JAN", how="inner")
+    
+    for i, row in df_plot.iterrows():
+        ax.scatter(
+            row["BodyAxis"], row["SweetAxis"],
+            s=row["rating"] * 160,  # ★ 2倍に変更
+            color='orange', alpha=0.5, edgecolor='black', linewidth=1.5
+        )
+    st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
 
-# 図設定
+# ✅ 図設定
 ax.set_xlabel("Body")
 ax.set_ylabel("Sweet")
 ax.set_title("TasteMAP")
-ax.legend(title="Type")
+
+# ✅ 凡例は固定順（User Rating は出さない）
+handles, labels = ax.get_legend_handles_labels()
+
+# 並び替え
+sorted_handles_labels = [
+    (h, l) for l in legend_order for h, lbl in zip(handles, labels) if lbl == l
+]
+
+# 描画
+if sorted_handles_labels:
+    sorted_handles, sorted_labels = zip(*sorted_handles_labels)
+    ax.legend(sorted_handles, sorted_labels, title="Type")
+
 ax.grid(True)
 ax.set_xticks([])
 ax.set_yticks([])
 
-# グラフ表示
+# ✅ グラフ表示
 st.pyplot(fig)
+
 
 import streamlit as st
 
