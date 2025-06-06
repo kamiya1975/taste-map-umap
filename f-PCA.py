@@ -10,10 +10,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import cdist
 
-# ✅ rcParams を初期化
+# ✅ rcParams 初期化
 matplotlib.rcdefaults()
 
-# ✅ フォント fallback をグローバル設定（GitHubでも安全）
+# ✅ フォント fallback
 matplotlib.rc('font', family='Arial Unicode MS')
 
 # ✅ タイトルCSS
@@ -105,12 +105,24 @@ st.subheader("基準のワインを飲んだ印象は？")
 slider_pc2 = st.slider("← こんなに甘みはいらない　　　　　　もう少し甘みがほしいな →", 0, 100, 50)
 slider_pc1 = st.slider("← もう少し軽やかな感じがいいな　　　　もう少し濃厚なコクがほしいな →", 0, 100, 50)
 
-# ✅ 軸スケール変換
-x_min, x_max = df_clean["BodyAxis"].min(), df_clean["BodyAxis"].max()
-y_min, y_max = df_clean["SweetAxis"].min(), df_clean["SweetAxis"].max()
+# ✅ Entry Wine (blendF) 位置
+entry_row = df_clean[df_clean["JAN"] == "blendF"]
 
-target_x = x_min + (slider_pc1 / 100) * (x_max - x_min)
-target_y = y_min + (slider_pc2 / 100) * (y_max - y_min)
+if not entry_row.empty:
+    entry_x = entry_row["BodyAxis"].values[0]
+    entry_y = entry_row["SweetAxis"].values[0]
+else:
+    st.error("❌ Entry Wine（blendF）がデータに見つかりません")
+    entry_x = (df_clean["BodyAxis"].min() + df_clean["BodyAxis"].max()) / 2
+    entry_y = (df_clean["SweetAxis"].min() + df_clean["SweetAxis"].max()) / 2
+
+# ✅ scale_x/scale_y
+scale_x = (df_clean["BodyAxis"].max() - df_clean["BodyAxis"].min()) / 3
+scale_y = (df_clean["SweetAxis"].max() - df_clean["SweetAxis"].min()) / 3
+
+# ✅ target_x / target_y (Entry Wine 基準)
+target_x = entry_x + ((slider_pc1 - 50) / 50) * scale_x
+target_y = entry_y + ((slider_pc2 - 50) / 50) * scale_y
 
 # ✅ blendF 除外
 df_search = df_clean[df_clean["JAN"] != "blendF"].copy()
@@ -138,6 +150,9 @@ for wine_type in legend_order:
             s=20
         )
 
+# Entry Wine位置（True位置マーク）
+ax.scatter(entry_x, entry_y, color='green', s=400, marker='P', label='Entry Wine (True)')
+
 # TOP10 ハイライト
 for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     ax.scatter(row["BodyAxis"], row["SweetAxis"],
@@ -145,28 +160,34 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     ax.text(row["BodyAxis"], row["SweetAxis"], str(idx),
             fontsize=9, color='white', ha='center', va='center')
 
-# ✅ ターゲット位置（スライダー入力位置）
+# ターゲット位置
 ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='Your Impression')
 
-# ✅ Entry Wine (blendF) の本来位置
-entry_row = df_clean[df_clean["JAN"] == "blendF"]
+# バブルチャート（session_state 保護つき）
+if "user_ratings_dict" in st.session_state:
+    df_ratings_input = pd.DataFrame([
+        {"JAN": jan, "rating": rating}
+        for jan, rating in st.session_state.user_ratings_dict.items()
+        if rating > 0
+    ])
 
-if not entry_row.empty:
-    entry_x = entry_row["BodyAxis"].values[0]
-    entry_y = entry_row["SweetAxis"].values[0]
+    if not df_ratings_input.empty:
+        df_plot = df_clean.merge(df_ratings_input, on="JAN", how="inner")
+        
+        for i, row in df_plot.iterrows():
+            ax.scatter(
+                row["BodyAxis"], row["SweetAxis"],
+                s=row["rating"] * 320,
+                color='orange', alpha=0.5, edgecolor='black', linewidth=1.5
+            )
+        st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
 
-    # ✅ 散布図に "本来の Entry Wine 位置" を五角形マーカーでプロット
-    ax.scatter(entry_x, entry_y, color='green', s=300, marker='P', label='Entry Wine (True)')
-    print(f"✅ Entry Wine (blendF) → X: {entry_x:.2f}, Y: {entry_y:.2f}")
-else:
-    print("⚠️ Entry Wine (blendF) が df_clean に見つかりませんでした！")
-
-# ✅ 図設定
+# 図設定
 ax.set_xlabel("-  Body  +")
 ax.set_ylabel("-  Sweet  +")
 ax.set_title("TasteMAP")
 
-# 凡例 → User Rating 無し
+# 凡例
 handles, labels = ax.get_legend_handles_labels()
 sorted_handles_labels = [
     (h, l) for l in legend_order + ['Entry Wine (True)', 'Your Impression']
