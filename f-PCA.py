@@ -194,10 +194,6 @@ sorted_handles_labels = [
     for h, lbl in zip(handles, labels) if lbl == l
 ]
 
-if sorted_handles_labels:
-    sorted_handles, sorted_labels = zip(*sorted_handles_labels)
-    ax.legend(sorted_handles, sorted_labels, title="Type")
-
 ax.grid(True)
 ax.set_xticks([])
 ax.set_yticks([])
