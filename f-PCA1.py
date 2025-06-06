@@ -365,24 +365,24 @@ df_deck["y"] = df_deck["SweetAxis"]
 
 # ✅ 色マップ（RGBA形式に変更 → Deck用！）
 color_map_rgba = {
-    "Spa": [0, 0, 255, 160],         # 青
-    "White": [255, 215, 0, 160],     # 金
-    "Red": [255, 0, 0, 160],         # 赤
-    "Rose": [255, 182, 193, 160],    # ピンク
-    "Entry Wine": [0, 255, 0, 160]   # 緑
+    "Spa": [0, 0, 255, 180],         # 青
+    "White": [255, 215, 0, 180],     # 金
+    "Red": [255, 0, 0, 180],         # 赤
+    "Rose": [255, 105, 180, 180],    # ピンク（少し濃く）
+    "Entry Wine": [0, 255, 0, 180]   # 緑
 }
 
 # ✅ Type に応じた色を列に追加
 df_deck["color"] = df_deck["Type"].map(color_map_rgba)
-df_deck["color"] = df_deck["color"].apply(lambda x: x if x is not None else [128, 128, 128, 160])  # fallback gray
+df_deck["color"] = df_deck["color"].apply(lambda x: x if x is not None else [128, 128, 128, 180])  # fallback gray
 
-# ✅ Scatterplot Layer（Type色分け版！）
+# ✅ Scatterplot Layer（Type色分け・大きめ）
 scatter_layer = pdk.Layer(
     "ScatterplotLayer",
     data=df_deck,
     get_position="[x, y]",
     get_fill_color="color",
-    get_radius=50,
+    get_radius=80,  # ← 大きめに見せる
     pickable=True,
     auto_highlight=True
 )
@@ -402,12 +402,19 @@ view_state = pdk.ViewState(
     pitch=0
 )
 
-# ✅ Deck 作成 → これで MAP 出せる！
+# ✅ Deck 作成
 deck_map = pdk.Deck(
     layers=[scatter_layer],
     initial_view_state=view_state,
-    map_style=None  # 背景は白
+    map_style=None
 )
 
 # ✅ 表示
 st.pydeck_chart(deck_map)
+
+# ✅ 仮の Legend を Streamlit 側に出す
+st.markdown("### Type Legend")
+for t, color in color_map_rgba.items():
+    rgba_css = f"rgba({color[0]}, {color[1]}, {color[2]}, {color[3]/255})"
+    st.markdown(f'<div style="display:inline-block;width:20px;height:20px;background:{rgba_css};margin-right:10px;"></div> {t}', unsafe_allow_html=True)
+
