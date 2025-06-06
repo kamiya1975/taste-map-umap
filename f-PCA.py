@@ -163,36 +163,40 @@ ax.set_yticks([])
 # グラフ表示
 st.pyplot(fig)
 
-# ✅ TOP10 表示＋評価フォーム ← 1列に整形
+# ✅ TOP10 表示＋評価フォーム ← スマート横並び版
 st.subheader("近いワイン TOP10（評価つき）")
 
 with st.form("rating_form"):
     for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
         jan = str(row["JAN"])
         
-        # ▶️ 表示ラベル整形
+        # ▶️ 表示ラベル
         label_text = f"{idx}. {row['商品名']} ({row['Type']}) {int(row['希望小売価格']):,} 円"
         
-        # ▶️ 既存の評価があれば取得
+        # ▶️ 既存の評価
         default_rating = st.session_state.user_ratings_dict.get(jan, 0)
         
-        # ▶️ ラベル
-        st.markdown(f"**{label_text}**")
+        # ▶️ 横並び：2カラム
+        col1, col2 = st.columns([0.7, 0.3])  # ← 横幅比率（調整可）
         
-        # ▶️ 評価セレクトボックス
-        rating = st.selectbox(
-            "評価（5段階）",
-            options=[0, 1, 2, 3, 4, 5],
-            index=default_rating,
-            key=f"rating_{jan}"
-        )
+        with col1:
+            st.markdown(f"**{label_text}**")
         
-        # ▶️ session_state に反映
+        with col2:
+            rating = st.selectbox(
+                " ",   # ← ラベルを空にしてコンパクトに
+                options=[0, 1, 2, 3, 4, 5],
+                index=default_rating,
+                key=f"rating_{jan}"
+            )
+        
+        # ▶️ session_state 反映
         st.session_state.user_ratings_dict[jan] = rating
         
-        # ▶️ 区切り線（オプション）
-        st.markdown("---")  # ← ここを入れると「見やすく」なります
+        # 区切り線（オプション）
+        st.markdown("---")
     
-    # ▶️ フォーム送信ボタン
+    # ▶️ フォームボタン
     submitted = st.form_submit_button("評価を反映する")
+
 
