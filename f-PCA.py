@@ -168,8 +168,8 @@ if "user_ratings_dict" in st.session_state:
         st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
 
 # 図設定
-ax.set_xlabel("Body")
-ax.set_ylabel("Sweet")
+ax.set_xlabel("-  Body  +")
+ax.set_ylabel("-  Sweet  +")
 ax.set_title("TasteMAP")
 
 # 凡例 → User Rating 無し
