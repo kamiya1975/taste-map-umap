@@ -355,62 +355,50 @@ from pyecharts.charts import Scatter
 from pyecharts import options as opts
 from streamlit_echarts import st_pyecharts
 
-# ✅ PCA データ準備（float化）
-df_clean["x"] = df_clean["BodyAxis"].astype(float)
-df_clean["y"] = df_clean["SweetAxis"].astype(float)
-df_clean["label"] = df_clean["商品名"]
-
-# ✅ 色設定 (pyecharts は HEX指定が確実！)
-color_hex_map = {
-    "Spa": "#0000FF",      # blue
-    "White": "#FFD700",    # gold
-    "Red": "#FF0000",      # red
-    "Rose": "#FFC0CB",     # pink
-    "Entry Wine": "#00FF00" # green
-}
-
-# ✅ 軸余白
+# ✅ PCA データ準備
 x_range_margin = (x_max - x_min) * 0.1
 y_range_margin = (y_max - y_min) * 0.1
 
-# ✅ Scatter 作成
+# ✅ Scatter インスタンス
 scatter = Scatter()
 
-# ✅ X軸設定
-scatter.add_xaxis(df_clean["x"].tolist())
+# ✅ Type ごとに add_yaxis (XYペア！)
+for t in color_map.keys():
+    df_t = df_clean[df_clean["Type"] == t]
+    xy_data = list(zip(df_t["BodyAxis"].astype(float), df_t["SweetAxis"].astype(float)))
+    
+    scatter.add_yaxis(
+        series_name=t,
+        y_axis=xy_data,
+        symbol_size=10,
+        label_opts=opts.LabelOpts(is_show=False),
+        itemstyle_opts=opts.ItemStyleOpts(color=color_map[t])
+    )
 
-# ✅ Typeごとに yaxis追加（色指定！）
-for wine_type in legend_order:
-    df_type = df_clean[df_clean["Type"] == wine_type]
-    if not df_type.empty:
-        xy_data = list(zip(df_type["y"], df_type["label"]))  # (y, label)
-        scatter.add_yaxis(
-            series_name=wine_type,
-            y_axis=xy_data,
-            label_opts=opts.LabelOpts(is_show=False),
-            itemstyle_opts=opts.ItemStyleOpts(color=color_hex_map[wine_type])
-        )
+# ✅ DataZoom → X/Y 両方
+datazoom_opts=[
+    opts.DataZoomOpts(),  # X軸バー
+    opts.DataZoomOpts(type_="inside"),  # X軸ピンチ
+    opts.DataZoomOpts(orient="vertical"),  # Y軸バー
+    opts.DataZoomOpts(type_="inside", orient="vertical")  # Y軸ピンチ
+]
 
-# ✅ 全体オプション
+# ✅ グローバル設定
 scatter.set_global_opts(
-    title_opts=opts.TitleOpts(title="TasteMAP (PCA複合軸・pyecharts版・Type色分け)"),
+    title_opts=opts.TitleOpts(title="TasteMAP (PCA複合軸・pyecharts版・改良)"),
     xaxis_opts=opts.AxisOpts(
         name="- Body +",
         min_=x_min - x_range_margin,
         max_=x_max + x_range_margin,
-        is_inverse=True  # ✅ X軸逆転
+        is_inverse=True
     ),
     yaxis_opts=opts.AxisOpts(
         name="- Sweet +",
         min_=y_min - y_range_margin,
         max_=y_max + y_range_margin
     ),
-    tooltip_opts=opts.TooltipOpts(trigger="axis"),
-    datazoom_opts=[
-        opts.DataZoomOpts(),  # 外ズームバー
-        opts.DataZoomOpts(type_="inside")  # ✅ ピンチズーム 有効
-    ],
-    legend_opts=opts.LegendOpts(pos_top="top", pos_left="center")  # ✅ 凡例位置
+    tooltip_opts=opts.TooltipOpts(trigger="item"),  # 1点ずつ表示
+    datazoom_opts=datazoom_opts
 )
 
 # ✅ 表示
