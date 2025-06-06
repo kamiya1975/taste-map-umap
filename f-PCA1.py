@@ -337,12 +337,12 @@ view_state = pdk.ViewState(
     pitch=0
 )
 
-# ✅ DeckGL map（背景真っ白 & OrthographicView で PCA軸対応！）
+# ✅ DeckGL map（背景真っ白 & OrthographicView → 正しい書き方）
 deck_map = pdk.Deck(
     layers=[scatter_layer],
     initial_view_state=view_state,
     map_style=None,
-    views=pdk.View(type="OrthographicView"),  # ★ PCA軸表示にする
+    views=pdk.OrthographicView(),  # ← これが正解！
     controller=True
 )
 
