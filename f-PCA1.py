@@ -371,7 +371,7 @@ scatter = (
             name="- Body +",
             min_=x_min - x_range_margin,
             max_=x_max + x_range_margin,
-            inverse=True  # ✅ 軸反転 Body 軸！
+            is_inverse=True  # ✅ 正しいパラメータ名！
         ),
         yaxis_opts=opts.AxisOpts(
             name="- Sweet +",
@@ -388,4 +388,3 @@ scatter = (
 
 # ✅ 表示
 st_pyecharts(scatter)
-
