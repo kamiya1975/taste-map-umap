@@ -27,8 +27,8 @@ st.markdown(title_css, unsafe_allow_html=True)
 slider_thumb_css = """
 <style>
 div[role="slider"] {
-    height: 40px !important;
-    width: 40px !important;
+    height: 30px !important;
+    width: 30px !important;
     background: red !important;
     border-radius: 50% !important;
     border: none !important;
