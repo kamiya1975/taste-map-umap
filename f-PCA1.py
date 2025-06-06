@@ -337,17 +337,18 @@ view_state = pdk.ViewState(
     pitch=0
 )
 
-# ✅ DeckGL map（背景真っ白 & Orthographic → 互換性高い版！）
-deck_map = pdk.Deck(
-    layers=[scatter_layer],
-    initial_view_state=view_state,
-    map_style=None,
-    parameters={"projection": "ORTHOGRAPHIC"},  # ← これがポイント！
-    controller=True
-)
+# --- DeckGL 部分は今はコメントアウトする！ ---
 
-# ✅ 表示
-st.pydeck_chart(deck_map)
+# deck_map = pdk.Deck(
+#     layers=[scatter_layer],
+#     initial_view_state=view_state,
+#     map_style=None,
+#     parameters={"projection": "ORTHOGRAPHIC"},
+#     controller=True
+# )
+
+# st.pydeck_chart(deck_map)
+
 
 # ✅ 必要ライブラリ
 from pyecharts.charts import Scatter
