@@ -358,11 +358,16 @@ df_deck = df_clean.copy()
 df_deck["x"] = df_deck["BodyAxis"]
 df_deck["y"] = df_deck["SweetAxis"]
 
-# ✅ ① 中心座標を 0,0 にシフト（Deck が扱いやすくなる！）
+# ✅ ① 中心座標を 0,0 にシフト
 df_deck["x_shift"] = df_deck["x"] - (x_min + x_max) / 2
 df_deck["y_shift"] = df_deck["y"] - (y_min + y_max) / 2
 
-# ✅ ② Deck 用 カラー変換 → RGB
+# ✅ ② スケーリング係数をかけて Deck に適合させる
+scale_factor = 100    # ← ここはあとで調整可！最初は100くらいでOK
+df_deck["x_scaled"] = df_deck["x_shift"] * scale_factor
+df_deck["y_scaled"] = df_deck["y_shift"] * scale_factor
+
+# ✅ ③ Deck 用 カラー変換 → RGB
 type_color_rgb = {
     "Spa": [0, 0, 255, 180],         # 青
     "White": [255, 215, 0, 180],     # ゴールド
@@ -373,16 +378,17 @@ type_color_rgb = {
 
 df_deck["color"] = df_deck["Type"].map(type_color_rgb).apply(lambda x: x if x is not None else [100, 100, 100, 180])
 
-# ✅ Scatterplot Layer（背景白）
+# ✅ ④ Scatterplot Layer（ここが重要！）
 scatter_layer = pdk.Layer(
     "ScatterplotLayer",
     data=df_deck,
-    get_position=["x_shift", "y_shift"],
+    get_position=["x_scaled", "y_scaled"],   # ✅ ここ変更！！
     get_fill_color="color",
-    get_radius=100,   # ← 少し大きめにして見やすく
+    get_radius=100,   # OK
     pickable=True,
     auto_highlight=True
 )
+
 
 # ✅ ViewState は "ダミー緯度経度" でOK → 画面操作は Deck 側で自由に動く
 view_state = pdk.ViewState(
