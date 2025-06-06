@@ -192,7 +192,6 @@ for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
     with col3:
         if st.button("反映", key=f"reflect_{jan}"):
             st.session_state.user_ratings_dict[jan] = rating
-            st.success(f"✅ 「{row['商品名']}」 評価 {rating} を反映しました！")
     
     # 区切り線
     st.markdown("---")
