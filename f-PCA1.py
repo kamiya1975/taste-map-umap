@@ -349,8 +349,6 @@ deck_map = pdk.Deck(
 # ✅ 表示
 st.pydeck_chart(deck_map)
 
-pip install pyecharts streamlit-echarts
-
 # ✅ 必要ライブラリ
 from pyecharts.charts import Scatter
 from pyecharts import options as opts
