@@ -137,33 +137,54 @@ distances = cdist(target_xy, all_xy).flatten()
 df_search["distance"] = distances
 df_sorted = df_search.sort_values("distance").head(10)
 
-# ✅ 散布図
-fig, ax = plt.subplots(figsize=(8, 8))
+# ✅ Plotly 用ライブラリ追加
+import plotly.express as px
+import plotly.graph_objects as go
 
-# ワイン点
-for wine_type in legend_order:
-    mask = df_clean["Type"] == wine_type
-    if mask.sum() > 0:
-        ax.scatter(
-            df_clean.loc[mask, "BodyAxis"],
-            df_clean.loc[mask, "SweetAxis"],
-            label=wine_type,
-            alpha=0.6,
-            color=color_map.get(wine_type, "gray"),
-            s=20
-        )
+# ✅ Plotly 用データ準備
+plot_df = df_clean.copy()
 
-# ✅ TOP10 ハイライト
-for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
-    ax.scatter(row["BodyAxis"], row["SweetAxis"],
-               color='black', edgecolor='white', s=240, marker='o')
-    ax.text(row["BodyAxis"], row["SweetAxis"], str(idx),
-            fontsize=9, color='white', ha='center', va='center')
+# サイズと色列を追加
+plot_df["size"] = 20
+plot_df["color"] = plot_df["Type"].map(color_map).fillna("gray")
 
-# ✅ ユーザー印象 (緑X)
-ax.scatter(target_x, target_y, color='green', s=200, marker='X', label='Your Impression')
+# ✅ TOP10 → 特大黒丸
+plot_df.loc[plot_df["JAN"].isin(df_sorted["JAN"]), "size"] = 40
+plot_df.loc[plot_df["JAN"].isin(df_sorted["JAN"]), "color"] = "black"
 
-# ✅ ★ バブルチャート ← ⭐️ ⭐️ ⭐️ ここに if 追加 ⭐️
+# ✅ ユーザー印象（Your Impression） → 別 DataFrame
+impression_df = pd.DataFrame({
+    "BodyAxis": [target_x],
+    "SweetAxis": [target_y],
+    "Type": ["Your Impression"],
+    "size": [50],
+    "color": ["green"],
+    "商品名": ["Your Impression"]
+})
+
+# ✅ Base scatter (全体)
+fig = px.scatter(
+    plot_df,
+    x="BodyAxis",
+    y="SweetAxis",
+    color="Type",
+    color_discrete_map=color_map,
+    size="size",
+    hover_data=["商品名", "JAN", "Type"]
+)
+
+# ✅ ユーザー印象 (Xマーク) を追加
+fig.add_trace(go.Scatter(
+    x=impression_df["BodyAxis"],
+    y=impression_df["SweetAxis"],
+    mode="markers+text",
+    marker=dict(size=50, color="green", symbol="x"),
+    text=["Your Impression"],
+    textposition="top center",
+    name="Your Impression"
+))
+
+# ✅ バブルチャート（ユーザー評価） ← ⭐️ ⭐️ ⭐️ ⭐️ ⭐️
 if "user_ratings_dict" in st.session_state:
     df_ratings_input = pd.DataFrame([
         {"JAN": jan, "rating": rating}
@@ -172,38 +193,41 @@ if "user_ratings_dict" in st.session_state:
     ])
 
     if not df_ratings_input.empty:
-        df_plot = df_clean.merge(df_ratings_input, on="JAN", how="inner")
+        df_plot_ratings = df_clean.merge(df_ratings_input, on="JAN", how="inner")
         
-        for i, row in df_plot.iterrows():
-            ax.scatter(
-                row["BodyAxis"], row["SweetAxis"],
-                s=row["rating"] * 320,
-                color='orange', alpha=0.5, edgecolor='black', linewidth=1.5
-            )
+        fig.add_trace(go.Scatter(
+            x=df_plot_ratings["BodyAxis"],
+            y=df_plot_ratings["SweetAxis"],
+            mode="markers",
+            marker=dict(
+                size=df_plot_ratings["rating"] * 16,
+                color="orange",
+                opacity=0.5,
+                line=dict(width=1.5, color="black")
+            ),
+            text=df_plot_ratings["商品名"],
+            name="Your Ratings 🎈"
+        ))
+
         st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
 
-# ✅ 凡例
-handles, labels = ax.get_legend_handles_labels()
-sorted_handles_labels = [
-    (h, l) for l in legend_order for h, lbl in zip(handles, labels) if lbl == l
-]
-# + User Impression
-sorted_handles_labels.append((ax.scatter([], [], color='green', s=200, marker='X'), 'Your Impression'))
+# ✅ レイアウト整備
+fig.update_layout(
+    title="TasteMAP (Interactive)",
+    xaxis_title="-  Body  +",
+    yaxis_title="-  Sweet  +",
+    showlegend=True,
+    width=800,
+    height=800
+)
 
-if sorted_handles_labels:
-    sorted_handles, sorted_labels = zip(*sorted_handles_labels)
-    ax.legend(sorted_handles, sorted_labels, title="Type")
+# ✅ 軸の目盛りを消す（現状維持にあわせる場合）
+fig.update_xaxes(showticklabels=False)
+fig.update_yaxes(showticklabels=False)
 
-# ✅ 軸設定
-ax.set_xlabel("-  Body  +")
-ax.set_ylabel("-  Sweet  +")
-ax.set_title("TasteMAP")
-ax.grid(True)
-ax.set_xticks([])
-ax.set_yticks([])
+# ✅ 表示（インタラクティブ！）
+st.plotly_chart(fig, use_container_width=True)
 
-# ✅ 表示
-st.pyplot(fig)
 
 # ✅ TOP10（評価つき）
 st.subheader("近いワイン TOP10（評価つき）")
