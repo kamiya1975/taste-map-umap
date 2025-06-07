@@ -8,8 +8,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import cdist
 import pydeck as pdk
-import plotly.express as px
-import plotly.graph_objects as go
 
 # ✅ rcParams 初期化
 matplotlib.rcdefaults()
@@ -81,12 +79,8 @@ X_scaled = scaler.fit_transform(df_clean[features])
 pca = PCA(n_components=3)
 X_pca = pca.fit_transform(X_scaled)
 
-PC1 = X_pca[:, 0]
-PC2 = X_pca[:, 1]
-PC3 = X_pca[:, 2]
-
-甘味軸 = (PC2 + PC3) / np.sqrt(2)
-複合ボディ軸 = (PC1 + 甘味軸) / np.sqrt(2)
+甘味軸 = (X_pca[:, 1] + X_pca[:, 2]) / np.sqrt(2)
+複合ボディ軸 = (X_pca[:, 0] + 甘味軸) / np.sqrt(2)
 
 df_clean["BodyAxis"] = 複合ボディ軸
 df_clean["SweetAxis"] = 甘味軸
@@ -95,7 +89,6 @@ df_clean["SweetAxis"] = 甘味軸
 color_map = {
     "Spa": "blue", "White": "gold", "Red": "red", "Rose": "pink", "Entry Wine": "green"
 }
-legend_order = ["Spa", "White", "Red", "Rose", "Entry Wine"]
 
 # ✅ blendF の位置取得
 blendF_row = df_clean[df_clean["JAN"] == "blendF"].iloc[0]
@@ -143,15 +136,16 @@ df_deck = df_clean.copy()
 df_deck["x"] = df_deck["BodyAxis"]
 df_deck["y"] = df_deck["SweetAxis"]
 
-# ✅ 中心シフト & スケーリング
+# 中心を 0,0 にシフト
 df_deck["x_shift"] = df_deck["x"] - (x_min + x_max) / 2
 df_deck["y_shift"] = df_deck["y"] - (y_min + y_max) / 2
 
+# スケーリング
 scale_factor = 100
 df_deck["x_scaled"] = df_deck["x_shift"] * scale_factor
 df_deck["y_scaled"] = df_deck["y_shift"] * scale_factor
 
-# ✅ RGB変換
+# RGB変換
 type_color_rgb = {
     "Spa": [0, 0, 255, 180],
     "White": [255, 215, 0, 180],
@@ -159,9 +153,10 @@ type_color_rgb = {
     "Rose": [255, 105, 180, 180],
     "Entry Wine": [0, 255, 0, 180],
 }
+
 df_deck["color"] = df_deck["Type"].map(type_color_rgb).apply(lambda x: x if x is not None else [100, 100, 100, 180])
 
-# ✅ 全体レイヤー
+# ✅ Scatterplot 全体
 scatter_layer = pdk.Layer(
     "ScatterplotLayer",
     data=df_deck,
@@ -170,7 +165,7 @@ scatter_layer = pdk.Layer(
     get_radius=100,
     pickable=True,
     auto_highlight=True,
-    coordinate_system=pdk.constants.COORDINATE_SYSTEM.IDENTITY
+    coordinate_system=1
 )
 
 # ✅ ViewState
@@ -200,7 +195,7 @@ target_layer = pdk.Layer(
     get_radius=150,
     pickable=False,
     auto_highlight=False,
-    coordinate_system=pdk.constants.COORDINATE_SYSTEM.IDENTITY
+    coordinate_system=1
 )
 
 # ✅ TOP10 黒丸
@@ -216,7 +211,7 @@ top10_layer = pdk.Layer(
     get_fill_color="color",
     get_radius=200,
     pickable=True,
-    coordinate_system=pdk.constants.COORDINATE_SYSTEM.IDENTITY
+    coordinate_system=1
 )
 
 # ✅ Deck 作成
