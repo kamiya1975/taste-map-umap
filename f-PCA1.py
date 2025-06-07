@@ -178,8 +178,9 @@ scatter_layer = pdk.Layer(
 
 # ✅ ViewState（PCA座標用に変更！）
 view_state = pdk.ViewState(
-    target=[0, 0],  # ← PCAの中心
-    zoom=0,         # ← 適正ズーム
+    longitude=0,
+    latitude=0,
+    zoom=0,
     min_zoom=-5,
     max_zoom=20,
     bearing=0,
