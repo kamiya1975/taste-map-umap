@@ -222,12 +222,11 @@ top10_layer = pdk.Layer(
     pickable=True
 )
 
-# ✅ Deck 作成
+# ✅ Deck 作成 → projection 外す / map_style を "light-v9" にする
 deck_map = pdk.Deck(
     layers=[scatter_layer, target_layer, top10_layer],
     initial_view_state=view_state,
-    map_style=None,
-    parameters={"projection": "ORTHOGRAPHIC"},
+    map_style="mapbox://styles/mapbox/light-v9",  # ← コレ
     tooltip={"text": "{商品名} ({Type})"}
 )
 
