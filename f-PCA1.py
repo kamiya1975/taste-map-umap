@@ -171,7 +171,7 @@ scatter_layer = pdk.Layer(
 # ✅ ViewState
 view_state = pdk.ViewState(
     target=[0, 0],
-    zoom=3,   # ← ここ！まずは 3 くらいから
+    zoom=10,   # ← ここ！まずは 3 くらいから
     min_zoom=-5,
     max_zoom=20,
     bearing=0,
