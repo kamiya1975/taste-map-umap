@@ -79,15 +79,23 @@ X_scaled = scaler.fit_transform(df_clean[features])
 pca = PCA(n_components=3)
 X_pca = pca.fit_transform(X_scaled)
 
-甘味軸 = (X_pca[:, 1] + X_pca[:, 2]) / np.sqrt(2)
-複合ボディ軸 = (X_pca[:, 0] + 甘味軸) / np.sqrt(2)
+PC1 = X_pca[:, 0]
+PC2 = X_pca[:, 1]
+PC3 = X_pca[:, 2]
+
+甘味軸 = (PC2 + PC3) / np.sqrt(2)
+複合ボディ軸 = (PC1 + 甘味軸) / np.sqrt(2)
 
 df_clean["BodyAxis"] = 複合ボディ軸
 df_clean["SweetAxis"] = 甘味軸
 
 # ✅ 色設定
-color_map = {
-    "Spa": "blue", "White": "gold", "Red": "red", "Rose": "pink", "Entry Wine": "green"
+type_color_rgb = {
+    "Spa": [0, 0, 255, 180],
+    "White": [255, 215, 0, 180],
+    "Red": [255, 0, 0, 180],
+    "Rose": [255, 105, 180, 180],
+    "Entry Wine": [0, 255, 0, 180],
 }
 
 # ✅ blendF の位置取得
@@ -121,10 +129,8 @@ if slider_pc2 <= 50:
 else:
     target_y = blendF_y + ((slider_pc2 - 50) / 50) * range_up_y
 
-# ✅ blendF 除外
-df_search = df_clean[df_clean["JAN"] != "blendF"].copy()
-
 # ✅ 一致度計算
+df_search = df_clean[df_clean["JAN"] != "blendF"].copy()
 target_xy = np.array([[target_x, target_y]])
 all_xy = df_search[["BodyAxis", "SweetAxis"]].values
 distances = cdist(target_xy, all_xy).flatten()
@@ -135,28 +141,12 @@ df_sorted = df_search.sort_values("distance").head(10)
 df_deck = df_clean.copy()
 df_deck["x"] = df_deck["BodyAxis"]
 df_deck["y"] = df_deck["SweetAxis"]
-
-# 中心を 0,0 にシフト
-df_deck["x_shift"] = df_deck["x"] - (x_min + x_max) / 2
-df_deck["y_shift"] = df_deck["y"] - (y_min + y_max) / 2
-
-# スケーリング
 scale_factor = 100
-df_deck["x_scaled"] = df_deck["x_shift"] * scale_factor
-df_deck["y_scaled"] = df_deck["y_shift"] * scale_factor
-
-# RGB変換
-type_color_rgb = {
-    "Spa": [0, 0, 255, 180],
-    "White": [255, 215, 0, 180],
-    "Red": [255, 0, 0, 180],
-    "Rose": [255, 105, 180, 180],
-    "Entry Wine": [0, 255, 0, 180],
-}
-
+df_deck["x_scaled"] = (df_deck["x"] - (x_min + x_max) / 2) * scale_factor
+df_deck["y_scaled"] = (df_deck["y"] - (y_min + y_max) / 2) * scale_factor
 df_deck["color"] = df_deck["Type"].map(type_color_rgb).apply(lambda x: x if x is not None else [100, 100, 100, 180])
 
-# ✅ Scatterplot 全体
+# ✅ 全体 Scatter Layer（coordinate_system 外す！）
 scatter_layer = pdk.Layer(
     "ScatterplotLayer",
     data=df_deck,
@@ -164,26 +154,14 @@ scatter_layer = pdk.Layer(
     get_fill_color="color",
     get_radius=100,
     pickable=True,
-    auto_highlight=True,
-    coordinate_system=1
-)
-
-# ✅ ViewState
-view_state = pdk.ViewState(
-    target=[0, 0],
-    zoom=10,   # ← ここ！まずは 3 くらいから
-    min_zoom=-5,
-    max_zoom=20,
-    bearing=0,
-    pitch=0
+    auto_highlight=True
 )
 
 # ✅ Target 緑丸
 target_df = pd.DataFrame({
     "x_scaled": [(target_x - (x_min + x_max) / 2) * scale_factor],
     "y_scaled": [(target_y - (y_min + y_max) / 2) * scale_factor],
-    "color": [[0, 255, 0, 255]],
-    "label": ["Your Impression"]
+    "color": [[0, 255, 0, 255]]
 })
 
 target_layer = pdk.Layer(
@@ -193,8 +171,7 @@ target_layer = pdk.Layer(
     get_fill_color="color",
     get_radius=150,
     pickable=False,
-    auto_highlight=False,
-    coordinate_system=1
+    auto_highlight=False
 )
 
 # ✅ TOP10 黒丸
@@ -209,15 +186,25 @@ top10_layer = pdk.Layer(
     get_position=["x_scaled", "y_scaled"],
     get_fill_color="color",
     get_radius=200,
-    pickable=True,
-    coordinate_system=1
+    pickable=True
+)
+
+# ✅ ViewState（地理座標ベース仮 → 確認用）
+view_state = pdk.ViewState(
+    longitude=0,
+    latitude=0,
+    zoom=3,
+    min_zoom=-5,
+    max_zoom=20,
+    bearing=0,
+    pitch=0
 )
 
 # ✅ Deck 作成
 deck_map = pdk.Deck(
     layers=[scatter_layer, target_layer, top10_layer],
     initial_view_state=view_state,
-    map_style=None,
+    map_style="mapbox://styles/mapbox/light-v9",
     tooltip={"text": "{商品名} ({Type})"}
 )
 
