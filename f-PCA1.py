@@ -186,25 +186,45 @@ view_state = pdk.ViewState(
     bearing=0,
     pitch=0
 )
-# --- Target Layer 追加 ---
+
+# ✅ ⑤ Target 緑丸（ユーザー印象）データ準備
+target_df = pd.DataFrame({
+    "x_scaled": [(target_x - (x_min + x_max) / 2) * scale_factor],
+    "y_scaled": [(target_y - (y_min + y_max) / 2) * scale_factor],
+    "color": [[0, 255, 0, 255]],  # 緑・不透明
+    "label": ["Your Impression"]
+})
+
+# ✅ ⑥ Target 緑丸 Scatter Layer
 target_layer = pdk.Layer(
     "ScatterplotLayer",
-    data=pd.DataFrame({
-        "x_scaled": [ (target_x - (x_min + x_max) / 2) * scale_factor ],
-        "y_scaled": [ (target_y - (y_min + y_max) / 2) * scale_factor ],
-        "商品名": ["Your Impression"],
-        "Type": ["Your Impression"],
-        "color": [[0, 255, 0, 255]]  # 緑
-    }),
+    data=target_df,
     get_position=["x_scaled", "y_scaled"],
     get_fill_color="color",
-    get_radius=150,
+    get_radius=150,   # 少し大きめ
+    pickable=False,
+    auto_highlight=False
+)
+
+# ✅ ⑦ TOP10 黒丸用データ準備
+top10_df = df_sorted.copy()
+top10_df["x_scaled"] = (top10_df["BodyAxis"] - (x_min + x_max) / 2) * scale_factor
+top10_df["y_scaled"] = (top10_df["SweetAxis"] - (y_min + y_max) / 2) * scale_factor
+top10_df["color"] = [[0, 0, 0, 255]] * len(top10_df)  # 黒・不透明
+
+# ✅ ⑧ TOP10 黒丸 Layer
+top10_layer = pdk.Layer(
+    "ScatterplotLayer",
+    data=top10_df,
+    get_position=["x_scaled", "y_scaled"],
+    get_fill_color="color",
+    get_radius=200,   # ちょっと大きめ
     pickable=True
 )
 
 # ✅ Deck 作成
 deck_map = pdk.Deck(
-    layers=[scatter_layer],
+    layers=[scatter_layer, target_layer, top10_layer],  # 3つ！
     initial_view_state=view_state,
     map_style=None,
     tooltip={"text": "{商品名} ({Type})"}
