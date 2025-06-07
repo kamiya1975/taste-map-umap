@@ -170,8 +170,7 @@ scatter_layer = pdk.Layer(
 
 # ✅ ViewState
 view_state = pdk.ViewState(
-    longitude=0,
-    latitude=0,
+    target=[0, 0],
     zoom=0,
     min_zoom=-5,
     max_zoom=20,
