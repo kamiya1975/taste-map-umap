@@ -224,9 +224,10 @@ top10_layer = pdk.Layer(
 
 # ✅ Deck 作成
 deck_map = pdk.Deck(
-    layers=[scatter_layer, target_layer, top10_layer],  # 3つ！
+    layers=[scatter_layer, target_layer, top10_layer],
     initial_view_state=view_state,
     map_style=None,
+    parameters={"projection": "ORTHOGRAPHIC"},
     tooltip={"text": "{商品名} ({Type})"}
 )
 
