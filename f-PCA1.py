@@ -186,6 +186,21 @@ view_state = pdk.ViewState(
     bearing=0,
     pitch=0
 )
+# --- Target Layer 追加 ---
+target_layer = pdk.Layer(
+    "ScatterplotLayer",
+    data=pd.DataFrame({
+        "x_scaled": [ (target_x - (x_min + x_max) / 2) * scale_factor ],
+        "y_scaled": [ (target_y - (y_min + y_max) / 2) * scale_factor ],
+        "商品名": ["Your Impression"],
+        "Type": ["Your Impression"],
+        "color": [[0, 255, 0, 255]]  # 緑
+    }),
+    get_position=["x_scaled", "y_scaled"],
+    get_fill_color="color",
+    get_radius=150,
+    pickable=True
+)
 
 # ✅ Deck 作成
 deck_map = pdk.Deck(
