@@ -7,6 +7,9 @@ import streamlit as st
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import cdist
+import pydeck as pdk
+import plotly.express as px
+import plotly.graph_objects as go
 
 # ✅ rcParams 初期化
 matplotlib.rcdefaults()
@@ -137,223 +140,7 @@ distances = cdist(target_xy, all_xy).flatten()
 df_search["distance"] = distances
 df_sorted = df_search.sort_values("distance").head(10)
 
-# ✅ Plotly 用ライブラリ追加
-import plotly.express as px
-import plotly.graph_objects as go
-
-# ✅ Plotly 用データ準備
-plot_df = df_clean.copy()
-
-# サイズと色列を追加
-plot_df["size"] = 20
-plot_df["color"] = plot_df["Type"].map(color_map).fillna("gray")
-
-# ✅ TOP10 → 特大黒丸
-plot_df.loc[plot_df["JAN"].isin(df_sorted["JAN"]), "size"] = 40
-plot_df.loc[plot_df["JAN"].isin(df_sorted["JAN"]), "color"] = "black"
-
-# ✅ ユーザー印象（Your Impression） → 別 DataFrame
-impression_df = pd.DataFrame({
-    "BodyAxis": [target_x],
-    "SweetAxis": [target_y],
-    "Type": ["Your Impression"],
-    "size": [50],
-    "color": ["green"],
-    "商品名": ["Your Impression"]
-})
-
-# ✅ Base scatter (全体)
-fig = px.scatter(
-    plot_df,
-    x="BodyAxis",
-    y="SweetAxis",
-    color="Type",
-    color_discrete_map=color_map,
-    size="size",
-    hover_data=["商品名", "JAN", "Type"]
-)
-
-# ✅ ユーザー印象 (Xマーク) を追加
-fig.add_trace(go.Scatter(
-    x=impression_df["BodyAxis"],
-    y=impression_df["SweetAxis"],
-    mode="markers+text",
-    marker=dict(size=50, color="green", symbol="x"),
-    text=["Your Impression"],
-    textposition="top center",
-    name="Your Impression"
-))
-
-# ✅ バブルチャート（ユーザー評価） ← ⭐️ ⭐️ ⭐️ ⭐️ ⭐️
-if "user_ratings_dict" in st.session_state:
-    df_ratings_input = pd.DataFrame([
-        {"JAN": jan, "rating": rating}
-        for jan, rating in st.session_state.user_ratings_dict.items()
-        if rating > 0
-    ])
-
-    if not df_ratings_input.empty:
-        df_plot_ratings = df_clean.merge(df_ratings_input, on="JAN", how="inner")
-        
-        fig.add_trace(go.Scatter(
-            x=df_plot_ratings["BodyAxis"],
-            y=df_plot_ratings["SweetAxis"],
-            mode="markers",
-            marker=dict(
-                size=df_plot_ratings["rating"] * 16,
-                color="orange",
-                opacity=0.5,
-                line=dict(width=1.5, color="black")
-            ),
-            text=df_plot_ratings["商品名"],
-            name="Your Ratings 🎈"
-        ))
-
-        st.info(f"🎈 現在 {len(df_ratings_input)} 件の評価が登録されています")
-
-# ✅ レイアウト整備（dragmode=pan + legend横並び + 背景グレー）
-fig.update_layout(
-    title="TasteMAP (PCA複合軸版 Interactive)",
-    xaxis_title="- Body +（PC1 + 甘味軸）",
-    yaxis_title="- Sweet +（PC2 + PC3）",
-    showlegend=True,
-    width=800,
-    height=800,
-    plot_bgcolor="rgba(245,245,245,1)",
-    paper_bgcolor="rgba(245,245,245,1)",
-    dragmode="pan",
-
-    # ✅ 凡例（legend）を外に出す（下に横並び）
-    legend=dict(
-        orientation="h",
-        x=0,
-        y=-0.15,  # ← y=-0.1〜-0.15 がスマホ/PC両方でバランス良い
-        bordercolor="black",
-        borderwidth=0.5,
-        bgcolor="rgba(255,255,255,0.8)"
-    )
-)
-
-# ✅ 軸の設定（目盛り復活＋ゼロ線＋グリッド＋ズーム固定）
-x_range_margin = (x_max - x_min) * 0.1
-y_range_margin = (y_max - y_min) * 0.1
-
-fig.update_xaxes(
-    title_text="- Body +（PC1 + 甘味軸）",
-    showticklabels=True,
-    zeroline=True,
-    zerolinewidth=2,
-    zerolinecolor='black',
-    gridcolor='lightgray',
-    range=[x_min - x_range_margin, x_max + x_range_margin]
-)
-
-fig.update_yaxes(
-    title_text="- Sweet +（PC2 + PC3）",
-    showticklabels=True,
-    zeroline=True,
-    zerolinewidth=2,
-    zerolinecolor='black',
-    gridcolor='lightgray',
-    range=[y_min - y_range_margin, y_max + y_range_margin]
-)
-
-# ✅ 最終表示（インタラクティブ！）→ scrollZoom 有効化 + responsive + key 追加
-st.plotly_chart(
-    fig,
-    use_container_width=True,
-    config={"scrollZoom": True, "responsive": True, "doubleClick": "reset"},
-    key="pca_plot"
-)
-
-# ✅ TOP10（評価つき）
-st.subheader("近いワイン TOP10（評価つき）")
-
-# user_ratings_dict の初期化（もしなければ）
-if "user_ratings_dict" not in st.session_state:
-    st.session_state.user_ratings_dict = {}
-
-# ★評価 options
-rating_options = ["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"]
-
-for idx, (i, row) in enumerate(df_sorted.iterrows(), start=1):
-    jan = str(row["JAN"])
-    label_text = f"{idx}. {row['商品名']} ({row['Type']}) {int(row['希望小売価格']):,} 円"
-
-    current_rating = st.session_state.user_ratings_dict.get(jan, 0)
-    current_index = current_rating if 0 <= current_rating <= 5 else 0
-
-    col1, col2, col3 = st.columns([0.6, 0.2, 0.2])
-
-    with col1:
-        st.markdown(f"**{label_text}**")
-
-    with col2:
-        selected_index = st.selectbox(
-            " ", options=rating_options,
-            index=current_index,
-            key=f"rating_{jan}_selectbox"
-        )
-        new_rating = rating_options.index(selected_index)
-
-    with col3:
-        if st.button("反映", key=f"reflect_{jan}"):
-            st.session_state.user_ratings_dict[jan] = new_rating
-            st.rerun()
-
-    st.markdown("---")
-
-# ✅ 必要ライブラリ
-import pydeck as pdk
-
-# ✅ DeckGL 用データ準備（PCA複合軸）
-df_deck = df_clean.copy()
-df_deck["x"] = df_deck["BodyAxis"]
-df_deck["y"] = df_deck["SweetAxis"]
-
-# ✅ Scatterplot Layer（シンプル版 → 背景真っ白）
-scatter_layer = pdk.Layer(
-    "ScatterplotLayer",
-    data=df_deck,
-    get_position="[x, y]",
-    get_fill_color="[0, 128, 255, 160]",  # 青
-    get_radius=50,
-    pickable=True,
-    auto_highlight=True
-)
-
-# ✅ Viewport セッティング
-x_center = (x_min + x_max) / 2
-y_center = (y_min + y_max) / 2
-zoom_level = 2
-
-view_state = pdk.ViewState(
-    longitude=x_center,
-    latitude=y_center,
-    zoom=zoom_level,
-    min_zoom=1,
-    max_zoom=10,
-    bearing=0,
-    pitch=0
-)
-
-# --- DeckGL 部分は今はコメントアウトする！ ---
-
-# deck_map = pdk.Deck(
-#     layers=[scatter_layer],
-#     initial_view_state=view_state,
-#     map_style=None,
-#     parameters={"projection": "ORTHOGRAPHIC"},
-#     controller=True
-# )
-
-# st.pydeck_chart(deck_map)
-
-
-# ✅ 必要ライブラリ
-import pydeck as pdk
-
-# ✅ DeckGL 用データ準備（PCA複合軸）
+# ✅ DeckGL 用データ準備
 df_deck = df_clean.copy()
 df_deck["x"] = df_deck["BodyAxis"]
 df_deck["y"] = df_deck["SweetAxis"]
@@ -363,38 +150,37 @@ df_deck["x_shift"] = df_deck["x"] - (x_min + x_max) / 2
 df_deck["y_shift"] = df_deck["y"] - (y_min + y_max) / 2
 
 # ✅ ② スケーリング係数をかけて Deck に適合させる
-scale_factor = 100    # ← ここはあとで調整可！最初は100くらいでOK
+scale_factor = 100
 df_deck["x_scaled"] = df_deck["x_shift"] * scale_factor
 df_deck["y_scaled"] = df_deck["y_shift"] * scale_factor
 
 # ✅ ③ Deck 用 カラー変換 → RGB
 type_color_rgb = {
-    "Spa": [0, 0, 255, 180],         # 青
-    "White": [255, 215, 0, 180],     # ゴールド
-    "Red": [255, 0, 0, 180],         # 赤
-    "Rose": [255, 105, 180, 180],    # ピンク
-    "Entry Wine": [0, 255, 0, 180],  # 緑
+    "Spa": [0, 0, 255, 180],
+    "White": [255, 215, 0, 180],
+    "Red": [255, 0, 0, 180],
+    "Rose": [255, 105, 180, 180],
+    "Entry Wine": [0, 255, 0, 180],
 }
 
 df_deck["color"] = df_deck["Type"].map(type_color_rgb).apply(lambda x: x if x is not None else [100, 100, 100, 180])
 
-# ✅ ④ Scatterplot Layer（ここが重要！）
+# ✅ ④ Scatterplot Layer（正しい！）
 scatter_layer = pdk.Layer(
     "ScatterplotLayer",
     data=df_deck,
-    get_position=["x_scaled", "y_scaled"],   # ✅ ここ変更！！
+    get_position=["x_scaled", "y_scaled"],
     get_fill_color="color",
-    get_radius=100,   # OK
+    get_radius=100,
     pickable=True,
     auto_highlight=True
 )
 
-
-# ✅ ViewState は "ダミー緯度経度" でOK → 画面操作は Deck 側で自由に動く
+# ✅ ViewState（中心は 0,0）
 view_state = pdk.ViewState(
     longitude=0,
     latitude=0,
-    zoom=3,    # ← ここを変更！（今は 0 → 小さすぎる）
+    zoom=3,
     min_zoom=-5,
     max_zoom=20,
     bearing=0,
@@ -405,16 +191,15 @@ view_state = pdk.ViewState(
 deck_map = pdk.Deck(
     layers=[scatter_layer],
     initial_view_state=view_state,
-    map_style=None,   # 背景白
+    map_style=None,
     tooltip={"text": "{商品名} ({Type})"}
 )
 
-# ✅ 表示
+# ✅ Deck 表示
 st.pydeck_chart(deck_map)
 
-# ✅ 仮の Legend を Streamlit 側に出す
+# ✅ Legend
 st.markdown("### Type Legend")
-for t, color in type_color_rgb.items():  # ← 修正
+for t, color in type_color_rgb.items():
     rgba_css = f"rgba({color[0]}, {color[1]}, {color[2]}, {color[3]/255})"
     st.markdown(f'<div style="display:inline-block;width:20px;height:20px;background:{rgba_css};margin-right:10px;"></div> {t}', unsafe_allow_html=True)
-
