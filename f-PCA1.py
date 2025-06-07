@@ -118,13 +118,11 @@ slider_pc2 = st.slider("← こんなに甘みはいらない　　　　　　�
 slider_pc1 = st.slider("← もう少し軽やかな感じがいいな　　　　もう少し濃厚なコクがほしいな →", 0, 100, 50)
 
 # ✅ スライダー → MAP座標変換
-# BodyAxis
 if slider_pc1 <= 50:
     target_x = blendF_x - ((50 - slider_pc1) / 50) * range_left_x
 else:
     target_x = blendF_x + ((slider_pc1 - 50) / 50) * range_right_x
 
-# SweetAxis
 if slider_pc2 <= 50:
     target_y = blendF_y - ((50 - slider_pc2) / 50) * range_down_y
 else:
@@ -145,16 +143,15 @@ df_deck = df_clean.copy()
 df_deck["x"] = df_deck["BodyAxis"]
 df_deck["y"] = df_deck["SweetAxis"]
 
-# ✅ ① 中心座標を 0,0 にシフト
+# ✅ 中心シフト & スケーリング
 df_deck["x_shift"] = df_deck["x"] - (x_min + x_max) / 2
 df_deck["y_shift"] = df_deck["y"] - (y_min + y_max) / 2
 
-# ✅ ② スケーリング係数をかけて Deck に適合させる
 scale_factor = 100
 df_deck["x_scaled"] = df_deck["x_shift"] * scale_factor
 df_deck["y_scaled"] = df_deck["y_shift"] * scale_factor
 
-# ✅ ③ Deck 用 カラー変換 → RGB
+# ✅ RGB変換
 type_color_rgb = {
     "Spa": [0, 0, 255, 180],
     "White": [255, 215, 0, 180],
@@ -162,10 +159,9 @@ type_color_rgb = {
     "Rose": [255, 105, 180, 180],
     "Entry Wine": [0, 255, 0, 180],
 }
-
 df_deck["color"] = df_deck["Type"].map(type_color_rgb).apply(lambda x: x if x is not None else [100, 100, 100, 180])
 
-# ✅ ④ Scatterplot Layer（全体）
+# ✅ 全体レイヤー
 scatter_layer = pdk.Layer(
     "ScatterplotLayer",
     data=df_deck,
@@ -173,10 +169,11 @@ scatter_layer = pdk.Layer(
     get_fill_color="color",
     get_radius=100,
     pickable=True,
-    auto_highlight=True
+    auto_highlight=True,
+    coordinate_system=pdk.constants.COORDINATE_SYSTEM.IDENTITY
 )
 
-# ✅ ViewState（PCA座標用に変更！）
+# ✅ ViewState
 view_state = pdk.ViewState(
     longitude=0,
     latitude=0,
@@ -187,11 +184,11 @@ view_state = pdk.ViewState(
     pitch=0
 )
 
-# ✅ ⑤ Target 緑丸（ユーザー印象）
+# ✅ Target 緑丸
 target_df = pd.DataFrame({
     "x_scaled": [(target_x - (x_min + x_max) / 2) * scale_factor],
     "y_scaled": [(target_y - (y_min + y_max) / 2) * scale_factor],
-    "color": [[0, 255, 0, 255]],  # 緑・不透明
+    "color": [[0, 255, 0, 255]],
     "label": ["Your Impression"]
 })
 
@@ -202,14 +199,15 @@ target_layer = pdk.Layer(
     get_fill_color="color",
     get_radius=150,
     pickable=False,
-    auto_highlight=False
+    auto_highlight=False,
+    coordinate_system=pdk.constants.COORDINATE_SYSTEM.IDENTITY
 )
 
-# ✅ ⑥ TOP10 黒丸
+# ✅ TOP10 黒丸
 top10_df = df_sorted.copy()
 top10_df["x_scaled"] = (top10_df["BodyAxis"] - (x_min + x_max) / 2) * scale_factor
 top10_df["y_scaled"] = (top10_df["SweetAxis"] - (y_min + y_max) / 2) * scale_factor
-top10_df["color"] = [[0, 0, 0, 255]] * len(top10_df)  # 黒・不透明
+top10_df["color"] = [[0, 0, 0, 255]] * len(top10_df)
 
 top10_layer = pdk.Layer(
     "ScatterplotLayer",
@@ -217,10 +215,11 @@ top10_layer = pdk.Layer(
     get_position=["x_scaled", "y_scaled"],
     get_fill_color="color",
     get_radius=200,
-    pickable=True
+    pickable=True,
+    coordinate_system=pdk.constants.COORDINATE_SYSTEM.IDENTITY
 )
 
-# ✅ Deck 作成 → map_style=None（背景白）
+# ✅ Deck 作成
 deck_map = pdk.Deck(
     layers=[scatter_layer, target_layer, top10_layer],
     initial_view_state=view_state,
